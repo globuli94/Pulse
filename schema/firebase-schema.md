@@ -1,7 +1,7 @@
 # Firebase Schema — Pulse
 
 **Project:** Pulse
-**Classification:** Safe — new project, no existing data or users.
+**Classification:** Safe — rules tighten access (unauthenticated blocked); no field renames or removals.
 **Last updated:** 2026-05-24
 
 ---
@@ -81,8 +81,35 @@ See `firestore.indexes.json` for the machine-readable definition.
 
 ## Firebase Services Required
 
-| Service | Purpose |
-|---|---|
-| Firebase Authentication | Email/Password and Google Sign-In |
-| Cloud Firestore | Primary database |
-| Firebase Storage | Avatar image storage |
+| Service | Status | Purpose |
+|---|---|---|
+| Firebase Authentication | ⚠️ BOARD ACTION REQUIRED — must enable in console | Email/Password and Google Sign-In providers |
+| Cloud Firestore | Active | Primary database |
+| Firebase Storage | Active | Avatar image storage |
+
+---
+
+## Firestore Rules Audit — FEAT-001 Authentication
+
+**Audit date:** 2026-05-24
+**Classification:** Safe — additive auth gates only.
+
+All Firestore rules require `request.auth != null`. Unauthenticated clients are denied by default for any path not explicitly matched. The rules implement least-privilege for the FEAT-001 access patterns:
+
+| Operation | Actor | Document | Rule |
+|---|---|---|---|
+| Write user profile on signup | Authenticated user (just created) | `users/{uid}` | `allow create` when `request.auth.uid == uid` |
+| Read user profile on login | Authenticated user | `users/{uid}` | `allow read` when `request.auth != null` |
+
+No changes to `firestore.rules` were required — the pre-existing rules already satisfy both acceptance criteria.
+
+### iOS / macOS OAuth Config Verification
+
+| Platform | File | `GIDClientID` | `REVERSED_CLIENT_ID` URL scheme |
+|---|---|---|---|
+| iOS | `ios/Runner/Info.plist` | ✅ present | ✅ present |
+| iOS | `ios/Runner/GoogleService-Info.plist` | ✅ `CLIENT_ID` present, `IS_SIGNIN_ENABLED: true` | ✅ `REVERSED_CLIENT_ID` present |
+| macOS | `macos/Runner/Info.plist` | ✅ added (was missing) | ✅ added (was missing) |
+| macOS | `macos/Runner/GoogleService-Info.plist` | ✅ `CLIENT_ID` present, `IS_SIGNIN_ENABLED: true` | ✅ `REVERSED_CLIENT_ID` present |
+
+`firebase_options.dart` includes `iosClientId` for both iOS and macOS platform configs. ✅
