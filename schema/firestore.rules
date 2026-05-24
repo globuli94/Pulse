@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------
+    // users/{uid}
+    // ---------------------------------------------------------------
+    match /users/{uid} {
+
+      // Any authenticated user may read any profile
+      allow read: if request.auth != null;
+
+      // Owner may create their own document on first sign-in
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.uid == uid;
+
+      // Owner may update only the permitted profile fields
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['displayName', 'bio', 'avatarUrl']);
+
+      // No delete via client
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // posts/{postId}
+    // ---------------------------------------------------------------
+    match /posts/{postId} {
+
+      // Any authenticated user may read any post
+      allow read: if request.auth != null;
+
+      // Authenticated user may create a post they own
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.authorId;
+
+      // Only author may delete their own post
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+
+      // Any authenticated user may increment likeCount by exactly 1;
+      // no other fields may change
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['likeCount'])
+                    && request.resource.data.likeCount == resource.data.likeCount + 1;
+    }
+
+  }
+}
