@@ -14,7 +14,7 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/home/presentation/screens/shell_screen.dart';
 import 'go_router_refresh_stream.dart';
 
 /// Creates the application [GoRouter] with an auth-aware redirect guard.
@@ -73,7 +73,7 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const ShellScreen(),
       ),
     ],
   );
