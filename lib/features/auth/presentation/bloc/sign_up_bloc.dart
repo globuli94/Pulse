@@ -33,24 +33,9 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
       await _repository.signUpWithEmail(event.email, event.password);
       emit(const SignUpInitial());
     } on AuthException catch (e) {
-      emit(SignUpFailure(message: _messageFromCode(e.code)));
+      emit(SignUpFailure(message: e.message ?? 'Account creation failed. Please try again.'));
     } catch (_) {
       emit(const SignUpFailure(message: 'An unexpected error occurred.'));
-    }
-  }
-
-  String _messageFromCode(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'An account already exists for this email.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'weak-password':
-        return 'Password must be at least 6 characters.';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection.';
-      default:
-        return 'Account creation failed. Please try again.';
     }
   }
 }

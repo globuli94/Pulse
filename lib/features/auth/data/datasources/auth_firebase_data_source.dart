@@ -36,7 +36,7 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
       );
       await _writeUserProfile(credential.user!, provider: 'email');
     } on FirebaseAuthException catch (e) {
-      throw AuthException(code: e.code, message: e.message);
+      throw _toAuthException(e, 'Account creation failed. Please try again.');
     }
   }
 
@@ -48,7 +48,7 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      throw AuthException(code: e.code, message: e.message);
+      throw _toAuthException(e, 'Sign-in failed. Please try again.');
     }
   }
 
@@ -66,7 +66,7 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
         await _writeUserProfile(userCredential.user!, provider: 'google');
       }
     } on FirebaseAuthException catch (e) {
-      throw AuthException(code: e.code, message: e.message);
+      throw _toAuthException(e, 'Sign-in failed. Please try again.');
     }
   }
 
@@ -75,8 +75,30 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
-      throw AuthException(code: e.code, message: e.message);
+      throw _toAuthException(
+        e,
+        'Failed to send reset email. Please try again.',
+      );
     }
+  }
+
+  /// Maps a [FirebaseAuthException] to a domain [AuthException] with a
+  /// user-friendly message. Falls back to [fallback] for unknown codes.
+  AuthException _toAuthException(FirebaseAuthException e, String fallback) {
+    const codeMessages = <String, String>{
+      'user-not-found': 'No account found for this email.',
+      'wrong-password': 'Incorrect password.',
+      'invalid-email': 'Please enter a valid email address.',
+      'user-disabled': 'This account has been disabled.',
+      'network-request-failed': 'Network error. Please check your connection.',
+      'invalid-credential': 'Incorrect email or password.',
+      'email-already-in-use': 'An account already exists for this email.',
+      'weak-password': 'Password must be at least 6 characters.',
+    };
+    return AuthException(
+      code: e.code,
+      message: codeMessages[e.code] ?? fallback,
+    );
   }
 
   @override

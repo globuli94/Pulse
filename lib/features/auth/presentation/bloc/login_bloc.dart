@@ -34,7 +34,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       await _repository.signInWithEmail(event.email, event.password);
       emit(const LoginInitial());
     } on AuthException catch (e) {
-      emit(LoginFailure(message: _messageFromCode(e.code)));
+      emit(LoginFailure(message: e.message ?? 'Sign-in failed. Please try again.'));
     } catch (_) {
       emit(const LoginFailure(message: 'An unexpected error occurred.'));
     }
@@ -49,28 +49,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       await _repository.signInWithGoogle();
       emit(const LoginInitial());
     } on AuthException catch (e) {
-      emit(LoginFailure(message: _messageFromCode(e.code)));
+      emit(LoginFailure(message: e.message ?? 'Sign-in failed. Please try again.'));
     } catch (_) {
       emit(const LoginFailure(message: 'An unexpected error occurred.'));
-    }
-  }
-
-  String _messageFromCode(String code) {
-    switch (code) {
-      case 'user-not-found':
-        return 'No account found for this email.';
-      case 'wrong-password':
-        return 'Incorrect password.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'user-disabled':
-        return 'This account has been disabled.';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection.';
-      case 'invalid-credential':
-        return 'Incorrect email or password.';
-      default:
-        return 'Sign-in failed. Please try again.';
     }
   }
 }

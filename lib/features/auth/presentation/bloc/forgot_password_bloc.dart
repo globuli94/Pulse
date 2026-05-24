@@ -30,22 +30,9 @@ class ForgotPasswordBloc extends Bloc<ForgotPasswordEvent, ForgotPasswordState> 
       await _repository.sendPasswordResetEmail(event.email);
       emit(const ForgotPasswordSuccess());
     } on AuthException catch (e) {
-      emit(ForgotPasswordFailure(message: _messageFromCode(e.code)));
+      emit(ForgotPasswordFailure(message: e.message ?? 'Failed to send reset email. Please try again.'));
     } catch (_) {
       emit(const ForgotPasswordFailure(message: 'An unexpected error occurred.'));
-    }
-  }
-
-  String _messageFromCode(String code) {
-    switch (code) {
-      case 'user-not-found':
-        return 'No account found for this email.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection.';
-      default:
-        return 'Failed to send reset email. Please try again.';
     }
   }
 }
