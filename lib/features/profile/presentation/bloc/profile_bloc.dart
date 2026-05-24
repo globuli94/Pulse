@@ -30,7 +30,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileLoadRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(const ProfileLoading());
+    // Skip ProfileLoading when freshly starting (ProfileInitial already
+    // shows a spinner in the UI); only emit it on re-loads from a loaded state.
+    if (state is! ProfileInitial) {
+      emit(const ProfileLoading());
+    }
     try {
       final profile = await _repository.getProfile(event.uid);
       emit(ProfileLoaded(profile: profile));

@@ -12,9 +12,30 @@ import '../widgets/profile_avatar_widget.dart';
 import 'edit_profile_screen.dart';
 
 /// Displays the currently signed-in user's profile.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   /// Creates a [ProfileScreen].
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Dispatch initial load after the first frame so context is ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (context.read<ProfileBloc>().state is! ProfileInitial) return;
+      final authState = context.read<AuthBloc>().state;
+      if (authState is Authenticated) {
+        context
+            .read<ProfileBloc>()
+            .add(ProfileLoadRequested(uid: authState.user.uid));
+      }
+    });
+  }
 
   Future<void> _pickAndUploadAvatar(
     BuildContext context,
@@ -65,15 +86,6 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthBloc>().state;
-    if (authState is! Authenticated) return const SizedBox.shrink();
-    final uid = authState.user.uid;
-
-    final blocState = context.watch<ProfileBloc>().state;
-    if (blocState is ProfileInitial) {
-      context.read<ProfileBloc>().add(ProfileLoadRequested(uid: uid));
-    }
-
     return BlocConsumer<ProfileBloc, ProfileState>(
       listener: (context, state) {
         if (state is ProfileFailure) {
@@ -111,7 +123,7 @@ class ProfileScreen extends StatelessWidget {
                           avatarUrl: profile.avatarUrl,
                           radius: 50,
                           onTap: () =>
-                              _pickAndUploadAvatar(context, uid),
+                              _pickAndUploadAvatar(context, profile.uid),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -177,7 +189,7 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ),
                           onTap: () =>
-                              _confirmDeleteAccount(context, uid),
+                              _confirmDeleteAccount(context, profile.uid),
                         ),
                       ],
                     ),
@@ -188,7 +200,14 @@ class ProfileScreen extends StatelessWidget {
           );
         }
 
-        // ProfileInitial or ProfileFailure
+        if (state is ProfileFailure) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Profile')),
+            body: Center(child: Text(state.message)),
+          );
+        }
+
+        // ProfileInitial, AccountDeleteSuccess
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );

@@ -45,7 +45,7 @@ void main() {
       );
 
       await tester.pumpWidget(buildScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(); // pump once — pumpAndSettle loops on CircularProgressIndicator
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
@@ -197,9 +197,10 @@ void main() {
       );
 
       await tester.pumpWidget(buildScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(); // pump once — error text is synchronously rendered
 
-      expect(find.text(errorMessage), findsOneWidget);
+      // Error text appears in Scaffold body; listener also shows it in a SnackBar.
+      expect(find.text(errorMessage), findsAtLeastNWidgets(1));
     });
 
     testWidgets('renders Scaffold without error', (WidgetTester tester) async {

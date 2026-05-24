@@ -37,7 +37,7 @@ class UserProfileScreen extends StatelessWidget {
         if (state is ProfileLoaded) {
           final profile = state.profile;
           return Scaffold(
-            appBar: AppBar(title: Text(profile.displayName)),
+            appBar: AppBar(title: const Text('Profile')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(

@@ -41,6 +41,7 @@ class ProfileAvatarWidget extends StatelessWidget {
           backgroundImage: hasUrl
               ? NetworkImage(avatarUrl!) as ImageProvider
               : null,
+          onBackgroundImageError: hasUrl ? (_, __) {} : null,
           child: !hasUrl
               ? Icon(Icons.person, size: radius)
               : null,

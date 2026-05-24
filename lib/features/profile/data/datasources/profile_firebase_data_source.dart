@@ -73,15 +73,20 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
     required String uid,
     required String imagePath,
   }) async {
-    final filename = imagePath.split('/').last;
-    final ref = _storage.ref('avatars/$uid/$filename');
-    await ref.putFile(File(imagePath));
-    final downloadUrl = await ref.getDownloadURL();
-    await _firestore.collection('users').doc(uid).update({
-      'avatarUrl': downloadUrl,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    return getProfile(uid);
+    try {
+      final filename = imagePath.split('/').last;
+      final ref = _storage.ref('avatars/$uid/$filename');
+      await ref.putFile(File(imagePath));
+      final downloadUrl = await ref.getDownloadURL();
+      await _firestore.collection('users').doc(uid).update({
+        'avatarUrl': downloadUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return getProfile(uid);
+    } catch (e) {
+      if (e is ProfileException) rethrow;
+      throw ProfileException('Failed to upload avatar.');
+    }
   }
 
   @override
