@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "694308970318",
+    "project_id": "pulse-94821",
+    "storage_bucket": "pulse-94821.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694308970318:android:21c890551754ef3228881f",
+        "android_client_info": {
+          "package_name": "com.globuli.pulse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhCXlnYEhBldt1k8zZk0ary9gDE0QzQ1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
