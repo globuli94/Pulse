@@ -36,18 +36,11 @@ service cloud.firestore {
 
       // Authenticated user may create a post they own
       allow create: if request.auth != null
-                    && request.auth.uid == request.resource.data.authorId;
+                    && request.auth.uid == request.resource.data.userId;
 
       // Only author may delete their own post
       allow delete: if request.auth != null
-                    && request.auth.uid == resource.data.authorId;
-
-      // Any authenticated user may increment likeCount by exactly 1;
-      // no other fields may change
-      allow update: if request.auth != null
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['likeCount'])
-                    && request.resource.data.likeCount == resource.data.likeCount + 1;
+                    && request.auth.uid == resource.data.userId;
     }
 
   }

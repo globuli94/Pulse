@@ -15,6 +15,9 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/home/presentation/screens/shell_screen.dart';
+import '../../features/posts/domain/repositories/posts_repository.dart';
+import '../../features/posts/presentation/bloc/create_post_bloc.dart';
+import '../../features/posts/presentation/screens/create_post_screen.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/presentation/bloc/user_profile_bloc.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
@@ -82,6 +85,15 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/create-post',
+        builder: (context, state) => BlocProvider<CreatePostBloc>(
+          create: (_) => CreatePostBloc(
+            repository: context.read<PostsRepository>(),
+          ),
+          child: const CreatePostScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile/:uid',

@@ -42,14 +42,15 @@
 
 **Purpose:** Stores individual posts authored by users. Document ID is a server-generated unique ID.
 
-**Owner:** `authorId` field (Firebase Auth UID of the author)
+**Owner:** `userId` field (Firebase Auth UID of the author)
 
 | Field | Firestore Type | Required | Description |
 |---|---|---|---|
-| `postId` | string | required | Mirrors document ID |
-| `authorId` | string | required | Firebase Auth UID of the post author |
-| `content` | string | required | Text body of the post |
-| `likeCount` | number | required | Cached like count; default 0 |
+| `userId` | string | required | Firebase Auth UID of the post author |
+| `displayName` | string | required | Author's display name captured at post time |
+| `avatarUrl` | string | optional | Author's avatar URL captured at post time; null if no avatar |
+| `text` | string | required | Post body text |
+| `imageUrl` | string | optional | Download URL for the post image in Firebase Storage; null if no image |
 | `createdAt` | timestamp | required | Server timestamp set on creation |
 
 **Access Patterns:**
@@ -57,16 +58,30 @@
 | Who | Operation | Condition |
 |---|---|---|
 | Authenticated user | Read any post | `request.auth != null` |
-| Authenticated user | Create a post | `request.auth.uid == request.resource.data.authorId` |
-| Author | Delete own post | `request.auth.uid == resource.data.authorId` |
-| Any authenticated user | Increment `likeCount` | Only `likeCount` field may change; delta must equal +1 |
+| Authenticated user | Create own post | `request.auth.uid == request.resource.data.userId` |
+| Author | Delete own post | `request.auth.uid == resource.data.userId` |
 
 **Query Patterns:**
 
 | Query | Index Required |
 |---|---|
 | No filter, order by `createdAt DESC` — global feed | No (single-field) |
-| Filter `authorId == uid`, order by `createdAt DESC` — profile page | **Yes** (composite) |
+| Filter `userId == X`, order by `createdAt DESC` — user post list | **Yes** (composite) |
+
+---
+
+### Firebase Storage — Post Images
+
+**Path:** `posts/{userId}/{postId}/image`
+
+**Purpose:** Stores one image per post, uploaded by the post author at post time.
+
+**Access Patterns:**
+
+| Who | Operation | Condition |
+|---|---|---|
+| Any authenticated user | Read image | `request.auth != null` |
+| Owner | Write/delete image | `request.auth.uid == userId` |
 
 ---
 
@@ -74,7 +89,7 @@
 
 | Collection | Fields | Notes |
 |---|---|---|
-| `posts` | `authorId ASC`, `createdAt DESC` | Profile page feed query |
+| `posts` | `userId ASC`, `createdAt DESC` | User-specific post list query |
 
 See `firestore.indexes.json` for the machine-readable definition.
 

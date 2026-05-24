@@ -1,0 +1,68 @@
+// lib/features/posts/data/repositories/posts_repository_impl.dart
+//
+// PostsRepositoryImpl — concrete implementation of PostsRepository.
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../domain/entities/post.dart';
+import '../../domain/repositories/posts_repository.dart';
+import '../datasources/posts_remote_data_source.dart';
+
+/// Firebase-backed implementation of [PostsRepository].
+class PostsRepositoryImpl implements PostsRepository {
+  /// Creates a [PostsRepositoryImpl].
+  PostsRepositoryImpl({required PostsRemoteDataSource dataSource})
+      : _dataSource = dataSource;
+
+  final PostsRemoteDataSource _dataSource;
+
+  @override
+  Stream<List<Post>> watchFeed() {
+    return _dataSource.watchFeed().map(
+          (maps) => maps.map(_mapToPost).toList(),
+        );
+  }
+
+  @override
+  Future<void> createPost({
+    required String text,
+    required String userId,
+    required String displayName,
+    String? avatarUrl,
+    XFile? image,
+  }) {
+    return _dataSource.createPost(
+      text: text,
+      userId: userId,
+      displayName: displayName,
+      avatarUrl: avatarUrl,
+      image: image,
+    );
+  }
+
+  @override
+  Future<void> deletePost({required String postId, required String userId}) {
+    return _dataSource.deletePost(postId: postId, userId: userId);
+  }
+
+  Post _mapToPost(Map<String, dynamic> map) {
+    final createdAt = map['createdAt'];
+    final DateTime dateTime;
+    if (createdAt is Timestamp) {
+      dateTime = createdAt.toDate();
+    } else {
+      dateTime = DateTime.now();
+    }
+
+    return Post(
+      id: map['id'] as String,
+      userId: map['userId'] as String,
+      displayName: map['displayName'] as String,
+      avatarUrl: map['avatarUrl'] as String?,
+      text: map['text'] as String,
+      imageUrl: map['imageUrl'] as String?,
+      createdAt: dateTime,
+    );
+  }
+}

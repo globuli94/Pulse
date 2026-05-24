@@ -16,6 +16,10 @@ import 'features/auth/data/datasources/auth_firebase_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/posts/data/datasources/posts_firebase_data_source.dart';
+import 'features/posts/data/repositories/posts_repository_impl.dart';
+import 'features/posts/domain/repositories/posts_repository.dart';
+import 'features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'features/profile/data/datasources/profile_firebase_data_source.dart';
 import 'features/profile/data/repositories/profile_repository_impl.dart';
 import 'features/profile/domain/repositories/profile_repository.dart';
@@ -78,6 +82,14 @@ class PulseApp extends StatelessWidget {
             ),
           ),
         ),
+        RepositoryProvider<PostsRepository>(
+          create: (context) => PostsRepositoryImpl(
+            dataSource: PostsFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+              storage: FirebaseStorage.instance,
+            ),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -87,6 +99,11 @@ class PulseApp extends StatelessWidget {
               profileRepository: context.read<ProfileRepository>(),
               authRepository: context.read<AuthRepository>(),
             ),
+          ),
+          BlocProvider<PostsFeedBloc>(
+            create: (context) => PostsFeedBloc(
+              repository: context.read<PostsRepository>(),
+            )..add(const PostsFeedSubscriptionRequested()),
           ),
         ],
         child: MaterialApp.router(
