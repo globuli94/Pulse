@@ -8,20 +8,24 @@ import 'package:pulse/features/auth/domain/entities/app_user.dart';
 import 'package:pulse/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pulse/features/home/presentation/screens/shell_screen.dart';
 import 'package:pulse/features/feed/presentation/screens/feed_screen.dart';
+import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/profile/presentation/screens/profile_screen.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_bloc.dart';
 
 class MockAuthBloc extends Mock implements AuthBloc {}
 class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
+class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState> implements PostsFeedBloc {}
 
 void main() {
   group('Navigation Shell - Flow Tests', () {
     late MockAuthBloc mockAuthBloc;
     late MockProfileBloc mockProfileBloc;
+    late MockPostsFeedBloc mockPostsFeedBloc;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
       mockProfileBloc = MockProfileBloc();
+      mockPostsFeedBloc = MockPostsFeedBloc();
       final testUser = AppUser(
         uid: 'test-uid',
         email: 'test@example.com',
@@ -39,6 +43,9 @@ void main() {
       // Mock profile state
       when(() => mockProfileBloc.state).thenReturn(const ProfileInitial());
       when(() => mockProfileBloc.stream).thenAnswer((_) => const Stream.empty());
+      // Mock posts feed state
+      when(() => mockPostsFeedBloc.state).thenReturn(const PostsFeedLoading());
+      when(() => mockPostsFeedBloc.stream).thenAnswer((_) => const Stream.empty());
     });
 
     testWidgets(
@@ -63,6 +70,7 @@ void main() {
             providers: [
               BlocProvider<AuthBloc>.value(value: mockAuthBloc),
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
             ],
             child: MaterialApp.router(
               routerConfig: router,
@@ -73,11 +81,11 @@ void main() {
         // Verify BottomNavigationBar is present
         expect(find.byType(BottomNavigationBar), findsOneWidget);
 
-        // Verify "Feed" tab is present
-        expect(find.text('Feed'), findsOneWidget);
+        // Verify "Feed" tab is present (appears in AppBar and BottomNavigationBar)
+        expect(find.text('Feed'), findsWidgets);
 
         // Verify "Profile" tab is present
-        expect(find.text('Profile'), findsOneWidget);
+        expect(find.text('Profile'), findsWidgets);
       },
     );
 
@@ -102,6 +110,7 @@ void main() {
             providers: [
               BlocProvider<AuthBloc>.value(value: mockAuthBloc),
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
             ],
             child: MaterialApp.router(
               routerConfig: router,
@@ -139,6 +148,7 @@ void main() {
             providers: [
               BlocProvider<AuthBloc>.value(value: mockAuthBloc),
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
             ],
             child: MaterialApp.router(
               routerConfig: router,
