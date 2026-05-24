@@ -33,7 +33,8 @@
 | Authenticated user | Read own profile | `request.auth.uid == uid` |
 | Authenticated user | Read any user profile | `request.auth != null` |
 | Authenticated user | Create own document | `request.auth.uid == resource-id` (first sign-in) |
-| Authenticated user | Update own profile fields | Only `displayName`, `bio`, `avatarUrl` |
+| Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `postCount` |
+| Owner | Delete own document | `request.auth.uid == uid` (account deletion) |
 
 ---
 
@@ -84,8 +85,8 @@ See `firestore.indexes.json` for the machine-readable definition.
 | Service | Status | Purpose |
 |---|---|---|
 | Firebase Authentication | ⚠️ BOARD ACTION REQUIRED — must enable in console | Email/Password and Google Sign-In providers |
-| Cloud Firestore | Active | Primary database |
-| Firebase Storage | Active | Avatar image storage |
+| Cloud Firestore | Active | Primary database; rules in `schema/firestore.rules` |
+| Firebase Storage | Active | Avatar image storage; rules in `schema/storage.rules` |
 
 ---
 
