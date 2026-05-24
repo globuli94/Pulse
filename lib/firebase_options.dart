@@ -63,6 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '694308970318',
     projectId: 'pulse-94821',
     storageBucket: 'pulse-94821.firebasestorage.app',
+    iosClientId: '694308970318-0l4f5u1170ujrngs5ia08ilch4gr2i7o.apps.googleusercontent.com',
     iosBundleId: 'com.pulse.app',
   );
 
@@ -72,6 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '694308970318',
     projectId: 'pulse-94821',
     storageBucket: 'pulse-94821.firebasestorage.app',
+    iosClientId: '694308970318-d2ef6qgdk14jqvbumchjigrvt91gntna.apps.googleusercontent.com',
     iosBundleId: 'com.globuli.pulse',
   );
 
@@ -83,4 +85,5 @@ class DefaultFirebaseOptions {
     authDomain: 'pulse-94821.firebaseapp.com',
     storageBucket: 'pulse-94821.firebasestorage.app',
   );
+
 }

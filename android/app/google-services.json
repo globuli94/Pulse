@@ -12,7 +12,12 @@
           "package_name": "com.globuli.pulse"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "694308970318-l5foiicnm8di2ho20b8jv9pp3qsr88er.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDhCXlnYEhBldt1k8zZk0ary9gDE0QzQ1g"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "694308970318-l5foiicnm8di2ho20b8jv9pp3qsr88er.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "694308970318-0l4f5u1170ujrngs5ia08ilch4gr2i7o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.pulse.app"
+              }
+            }
+          ]
         }
       }
     }
