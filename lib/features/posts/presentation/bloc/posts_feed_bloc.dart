@@ -1,6 +1,6 @@
 // lib/features/posts/presentation/bloc/posts_feed_bloc.dart
 //
-// PostsFeedBloc — manages the global posts feed stream.
+// PostsFeedBloc — manages the paginated posts feed.
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -20,21 +20,57 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
       : _repository = repository,
         super(const PostsFeedInitial()) {
     on<PostsFeedSubscriptionRequested>(_onSubscriptionRequested);
+    on<PostsFeedNextPageRequested>(_onNextPageRequested);
     on<PostsDeleteRequested>(_onDeleteRequested);
   }
 
   final PostsRepository _repository;
 
+  /// Loads (or reloads) the first page of the feed.
   Future<void> _onSubscriptionRequested(
     PostsFeedSubscriptionRequested event,
     Emitter<PostsFeedState> emit,
   ) async {
     emit(const PostsFeedLoading());
-    await emit.forEach<List<Post>>(
-      _repository.watchFeed(),
-      onData: (posts) => PostsFeedLoaded(posts: posts),
-      onError: (error, _) => PostsFeedError(error: error.toString()),
-    );
+    try {
+      final page = await _repository.fetchFeed();
+      emit(
+        PostsFeedLoaded(
+          posts: page.posts,
+          hasMore: page.hasMore,
+          cursor: page.cursor,
+        ),
+      );
+    } catch (e) {
+      emit(PostsFeedError(error: e.toString()));
+    }
+  }
+
+  /// Appends the next page to the existing feed.
+  Future<void> _onNextPageRequested(
+    PostsFeedNextPageRequested event,
+    Emitter<PostsFeedState> emit,
+  ) async {
+    final current = state;
+    if (current is! PostsFeedLoaded ||
+        !current.hasMore ||
+        current.isLoadingMore) {
+      return;
+    }
+
+    emit(current.copyWith(isLoadingMore: true));
+    try {
+      final page = await _repository.fetchFeed(cursor: current.cursor);
+      emit(
+        PostsFeedLoaded(
+          posts: [...current.posts, ...page.posts],
+          hasMore: page.hasMore,
+          cursor: page.cursor,
+        ),
+      );
+    } catch (e) {
+      emit(PostsFeedError(error: e.toString()));
+    }
   }
 
   Future<void> _onDeleteRequested(
@@ -46,7 +82,8 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
         postId: event.postId,
         userId: event.userId,
       );
-      // Stream auto-refreshes; no manual state update needed.
+      // Reload first page so the deleted post disappears immediately.
+      add(const PostsFeedSubscriptionRequested());
     } catch (e) {
       emit(PostsFeedError(error: e.toString()));
     }

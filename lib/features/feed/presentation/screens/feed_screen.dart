@@ -1,6 +1,6 @@
 // lib/features/feed/presentation/screens/feed_screen.dart
 //
-// FeedScreen — live post feed using PostsFeedBloc.
+// FeedScreen — paginated post feed using PostsFeedBloc.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,6 +22,14 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -29,6 +37,30 @@ class _FeedScreenState extends State<FeedScreen> {
     if (bloc.state is PostsFeedInitial) {
       bloc.add(const PostsFeedSubscriptionRequested());
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      context.read<PostsFeedBloc>().add(const PostsFeedNextPageRequested());
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    context.read<PostsFeedBloc>().add(const PostsFeedSubscriptionRequested());
+    // Wait for the BLoC to leave the loading state before completing the
+    // refresh gesture.
+    await context.read<PostsFeedBloc>().stream.firstWhere(
+          (s) => s is PostsFeedLoaded || s is PostsFeedError,
+        );
   }
 
   @override
@@ -53,10 +85,23 @@ class _FeedScreenState extends State<FeedScreen> {
             if (state.posts.isEmpty) {
               return const Center(child: Text('No posts yet'));
             }
-            return ListView.builder(
-              itemCount: state.posts.length,
-              itemBuilder: (context, index) =>
-                  PostCard(post: state.posts[index]),
+            return RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: ListView.builder(
+                controller: _scrollController,
+                // Extra slot for bottom loading indicator.
+                itemCount:
+                    state.posts.length + (state.isLoadingMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == state.posts.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return PostCard(post: state.posts[index]);
+                },
+              ),
             );
           }
 

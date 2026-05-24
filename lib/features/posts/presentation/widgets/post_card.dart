@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
@@ -37,25 +38,32 @@ class PostCard extends StatelessWidget {
             // Header row: avatar + name + timestamp + optional delete
             Row(
               children: [
-                ProfileAvatar(avatarUrl: post.avatarUrl, radius: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                GestureDetector(
+                  onTap: () => context.push('/profile/${post.userId}'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        post.displayName,
-                        style: theme.textTheme.titleSmall,
-                      ),
-                      Text(
-                        _relativeTime(post.createdAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                      ProfileAvatar(avatarUrl: post.avatarUrl, radius: 20),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            post.displayName,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          Text(
+                            _relativeTime(post.createdAt),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                const Spacer(),
                 if (isOwner)
                   IconButton(
                     icon: const Icon(Icons.delete_outline),

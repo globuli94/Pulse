@@ -2,12 +2,24 @@
 //
 // PostsRemoteDataSource — abstract interface for the posts data source.
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../models/posts_feed_raw_page.dart';
 
 /// Abstract interface that all posts remote data sources must implement.
 abstract class PostsRemoteDataSource {
   /// Returns a stream of raw post data maps ordered by creation time.
   Stream<List<Map<String, dynamic>>> watchFeed();
+
+  /// Fetches a single page of posts ordered by [createdAt] descending.
+  ///
+  /// Pass [cursor] (the [DocumentSnapshot] from a previous page) to continue
+  /// pagination. Omit [cursor] to start from the first page.
+  Future<PostsFeedRawPage> fetchFeed({
+    DocumentSnapshot? cursor,
+    int limit = 15,
+  });
 
   /// Creates a new post document and optionally uploads an image.
   ///

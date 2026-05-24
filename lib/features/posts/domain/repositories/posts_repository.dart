@@ -5,6 +5,7 @@
 import 'package:image_picker/image_picker.dart';
 
 import '../entities/post.dart';
+import '../entities/posts_feed_page.dart';
 
 /// Abstract repository defining all post-related operations.
 ///
@@ -12,6 +13,13 @@ import '../entities/post.dart';
 abstract class PostsRepository {
   /// Returns a stream of all posts ordered by creation time (newest first).
   Stream<List<Post>> watchFeed();
+
+  /// Fetches a single page of posts ordered by [createdAt] descending.
+  ///
+  /// Pass [cursor] returned by a previous [fetchFeed] call to load the next
+  /// page. The cursor is opaque to the domain layer — only the data layer
+  /// knows its concrete type.
+  Future<PostsFeedPage> fetchFeed({Object? cursor, int limit = 15});
 
   /// Creates a new post authored by [userId].
   ///

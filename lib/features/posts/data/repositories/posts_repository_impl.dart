@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../domain/entities/post.dart';
+import '../../domain/entities/posts_feed_page.dart';
 import '../../domain/repositories/posts_repository.dart';
 import '../datasources/posts_remote_data_source.dart';
 
@@ -22,6 +23,19 @@ class PostsRepositoryImpl implements PostsRepository {
     return _dataSource.watchFeed().map(
           (maps) => maps.map(_mapToPost).toList(),
         );
+  }
+
+  @override
+  Future<PostsFeedPage> fetchFeed({Object? cursor, int limit = 15}) async {
+    final raw = await _dataSource.fetchFeed(
+      cursor: cursor as DocumentSnapshot?,
+      limit: limit,
+    );
+    return PostsFeedPage(
+      posts: raw.posts.map(_mapToPost).toList(),
+      hasMore: raw.hasMore,
+      cursor: raw.cursor,
+    );
   }
 
   @override

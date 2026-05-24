@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/posts_feed_raw_page.dart';
 import 'posts_remote_data_source.dart';
 
 /// Firebase-backed implementation of [PostsRemoteDataSource].
@@ -33,6 +34,35 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
               .map((doc) => {'id': doc.id, ...doc.data()})
               .toList(),
         );
+  }
+
+  @override
+  Future<PostsFeedRawPage> fetchFeed({
+    DocumentSnapshot? cursor,
+    int limit = 15,
+  }) async {
+    // Fetch one extra document to determine whether another page exists.
+    Query<Map<String, dynamic>> query = _firestore
+        .collection('posts')
+        .orderBy('createdAt', descending: true)
+        .limit(limit + 1);
+
+    if (cursor != null) {
+      query = query.startAfterDocument(cursor);
+    }
+
+    final snapshot = await query.get();
+    final hasMore = snapshot.docs.length > limit;
+    final docs =
+        hasMore ? snapshot.docs.take(limit).toList() : snapshot.docs;
+
+    return PostsFeedRawPage(
+      posts: docs
+          .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+          .toList(),
+      hasMore: hasMore,
+      cursor: docs.isNotEmpty ? docs.last : null,
+    );
   }
 
   @override
