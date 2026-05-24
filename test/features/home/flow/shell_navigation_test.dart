@@ -3,20 +3,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:pulse/features/auth/domain/entities/app_user.dart';
 import 'package:pulse/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pulse/features/home/presentation/screens/shell_screen.dart';
 import 'package:pulse/features/feed/presentation/screens/feed_screen.dart';
 import 'package:pulse/features/profile/presentation/screens/profile_screen.dart';
+import 'package:pulse/features/profile/presentation/bloc/profile_bloc.dart';
 
 class MockAuthBloc extends Mock implements AuthBloc {}
+class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
 
 void main() {
   group('Navigation Shell - Flow Tests', () {
     late MockAuthBloc mockAuthBloc;
+    late MockProfileBloc mockProfileBloc;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
+      mockProfileBloc = MockProfileBloc();
       final testUser = AppUser(
         uid: 'test-uid',
         email: 'test@example.com',
@@ -31,6 +36,9 @@ void main() {
           Authenticated(testUser),
         ),
       );
+      // Mock profile state
+      when(() => mockProfileBloc.state).thenReturn(const ProfileInitial());
+      when(() => mockProfileBloc.stream).thenAnswer((_) => const Stream.empty());
     });
 
     testWidgets(
@@ -51,8 +59,11 @@ void main() {
         );
 
         await tester.pumpWidget(
-          BlocProvider<AuthBloc>.value(
-            value: mockAuthBloc,
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+              BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+            ],
             child: MaterialApp.router(
               routerConfig: router,
             ),
@@ -87,8 +98,11 @@ void main() {
         );
 
         await tester.pumpWidget(
-          BlocProvider<AuthBloc>.value(
-            value: mockAuthBloc,
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+              BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+            ],
             child: MaterialApp.router(
               routerConfig: router,
             ),
@@ -97,7 +111,7 @@ void main() {
 
         // Tap the Profile tab
         await tester.tap(find.text('Profile'));
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         // Verify ProfileScreen is displayed
         expect(find.byType(ProfileScreen), findsOneWidget);
@@ -121,8 +135,11 @@ void main() {
         );
 
         await tester.pumpWidget(
-          BlocProvider<AuthBloc>.value(
-            value: mockAuthBloc,
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+              BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+            ],
             child: MaterialApp.router(
               routerConfig: router,
             ),
@@ -131,11 +148,11 @@ void main() {
 
         // First tap Profile to switch away from Feed
         await tester.tap(find.text('Profile'));
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         // Now tap Feed tab
         await tester.tap(find.text('Feed'));
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         // Verify FeedScreen is displayed
         expect(find.byType(FeedScreen), findsOneWidget);
