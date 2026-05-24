@@ -20,10 +20,11 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.auth.uid == uid
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['displayName', 'bio', 'avatarUrl']);
+                         .hasOnly(['displayName', 'bio', 'avatarUrl', 'updatedAt']);
 
-      // No delete via client
-      allow delete: if false;
+      // Owner may delete their own document on account deletion
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid;
     }
 
     // ---------------------------------------------------------------

@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ---------------------------------------------------------------
+    // avatars/{userId}/{filename}
+    // ---------------------------------------------------------------
+    match /avatars/{userId}/{filename} {
+
+      // Any authenticated user may read any avatar (public profile photos)
+      allow read: if request.auth != null;
+
+      // Owner may write to their own avatar path only
+      allow write: if request.auth != null
+                   && request.auth.uid == userId;
+    }
+
+  }
+}

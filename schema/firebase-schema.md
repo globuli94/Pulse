@@ -25,6 +25,7 @@
 | `followingCount` | number | required | Cached following count; default 0 |
 | `postCount` | number | required | Cached post count; default 0 |
 | `createdAt` | timestamp | required | Server timestamp set on first document creation |
+| `updatedAt` | timestamp | required | Server timestamp updated on every profile write |
 
 **Access Patterns:**
 
@@ -33,7 +34,8 @@
 | Authenticated user | Read own profile | `request.auth.uid == uid` |
 | Authenticated user | Read any user profile | `request.auth != null` |
 | Authenticated user | Create own document | `request.auth.uid == resource-id` (first sign-in) |
-| Authenticated user | Update own profile fields | Only `displayName`, `bio`, `avatarUrl` |
+| Authenticated user | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `updatedAt` |
+| Owner | Delete own document on account deletion | `request.auth.uid == uid` |
 
 ---
 
@@ -79,13 +81,30 @@ See `firestore.indexes.json` for the machine-readable definition.
 
 ---
 
+## Firebase Storage
+
+### `avatars/{userId}/{filename}` — Storage path
+
+**Purpose:** Stores user avatar images. One path per user; multiple filenames supported.
+
+**Owner:** Firebase Auth UID (`userId`)
+
+| Actor | Operation | Condition |
+|---|---|---|
+| Any authenticated user | Read any avatar | `request.auth != null` |
+| Owner | Write to own avatar path | `request.auth.uid == userId` |
+
+See `schema/storage.rules` for the machine-readable definition.
+
+---
+
 ## Firebase Services Required
 
 | Service | Status | Purpose |
 |---|---|---|
 | Firebase Authentication | ⚠️ BOARD ACTION REQUIRED — must enable in console | Email/Password and Google Sign-In providers |
 | Cloud Firestore | Active | Primary database |
-| Firebase Storage | Active | Avatar image storage |
+| Firebase Storage | ⚠️ BOARD ACTION REQUIRED — enable in console before deploy | Avatar image storage (`avatars/{userId}/{filename}`) |
 
 ---
 
