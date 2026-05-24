@@ -35,9 +35,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       final profile = await _repository.getProfile(event.uid);
       emit(ProfileLoaded(profile: profile));
     } on ProfileException catch (e) {
-      emit(ProfileFailure(error: e.message));
+      emit(ProfileFailure(message: e.message));
     } catch (e) {
-      emit(ProfileFailure(error: 'Failed to load profile.'));
+      emit(ProfileFailure(message: 'Failed to load profile.'));
     }
   }
 
@@ -45,24 +45,22 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileUpdateRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state is! ProfileLoaded) {
-      emit(const ProfileFailure(error: 'Profile not loaded.'));
-      return;
+    final currentProfile =
+        state is ProfileLoaded ? (state as ProfileLoaded).profile : null;
+    if (currentProfile != null) {
+      emit(ProfileUpdating(profile: currentProfile));
     }
-    final currentProfile = (state as ProfileLoaded).profile;
-    emit(ProfileUpdating(profile: currentProfile));
     try {
-      await _repository.updateProfile(
+      final updated = await _repository.updateProfile(
         uid: event.uid,
         displayName: event.displayName,
         bio: event.bio,
       );
-      final updated = await _repository.getProfile(event.uid);
       emit(ProfileLoaded(profile: updated));
     } on ProfileException catch (e) {
-      emit(ProfileFailure(error: e.message));
+      emit(ProfileFailure(message: e.message));
     } catch (e) {
-      emit(ProfileFailure(error: 'Failed to update profile.'));
+      emit(ProfileFailure(message: 'Failed to update profile.'));
     }
   }
 
@@ -70,24 +68,21 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     AvatarUploadRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state is! ProfileLoaded) {
-      emit(const ProfileFailure(error: 'Profile not loaded.'));
-      return;
+    final currentProfile =
+        state is ProfileLoaded ? (state as ProfileLoaded).profile : null;
+    if (currentProfile != null) {
+      emit(ProfileUpdating(profile: currentProfile));
     }
-    final currentProfile = (state as ProfileLoaded).profile;
-    emit(ProfileUpdating(profile: currentProfile));
     try {
-      await _repository.uploadAvatar(
+      final updated = await _repository.uploadAvatar(
         uid: event.uid,
-        imageBytes: event.imageBytes,
-        filename: event.filename,
+        imagePath: event.imagePath,
       );
-      final updated = await _repository.getProfile(event.uid);
       emit(ProfileLoaded(profile: updated));
     } on ProfileException catch (e) {
-      emit(ProfileFailure(error: e.message));
+      emit(ProfileFailure(message: e.message));
     } catch (e) {
-      emit(ProfileFailure(error: 'Failed to upload avatar.'));
+      emit(ProfileFailure(message: 'Failed to upload avatar.'));
     }
   }
 
@@ -96,12 +91,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     try {
-      await _repository.deleteAccount(event.uid);
+      await _repository.deleteAccount(uid: event.uid);
       emit(const AccountDeleteSuccess());
     } on ProfileException catch (e) {
-      emit(ProfileFailure(error: e.message));
+      emit(ProfileFailure(message: e.message));
     } catch (e) {
-      emit(ProfileFailure(error: 'Failed to delete account.'));
+      emit(ProfileFailure(message: 'Failed to delete account.'));
     }
   }
 }

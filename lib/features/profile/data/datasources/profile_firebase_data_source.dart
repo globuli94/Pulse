@@ -2,7 +2,7 @@
 //
 // ProfileFirebaseDataSource — Firebase implementation of ProfileRemoteDataSource.
 
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,14 +18,14 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
   ProfileFirebaseDataSource({
     required FirebaseFirestore firestore,
     required FirebaseStorage storage,
-    required FirebaseAuth firebaseAuth,
+    FirebaseAuth? firebaseAuth,
   })  : _firestore = firestore,
         _storage = storage,
         _firebaseAuth = firebaseAuth;
 
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
-  final FirebaseAuth _firebaseAuth;
+  final FirebaseAuth? _firebaseAuth;
 
   @override
   Future<UserProfile> getProfile(String uid) async {
@@ -33,7 +33,7 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
         await _firestore.collection('users').doc(uid).get();
 
     if (!snapshot.exists) {
-      throw const ProfileException(message: 'User not found.');
+      throw const ProfileException('User not found.');
     }
 
     final data = snapshot.data()!;
@@ -44,43 +44,49 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
       bio: data['bio'] as String? ?? '',
       avatarUrl: data['avatarUrl'] as String? ?? '',
       postCount: (data['postCount'] as num?)?.toInt() ?? 0,
+      followerCount: (data['followerCount'] as num?)?.toInt() ?? 0,
+      followingCount: (data['followingCount'] as num?)?.toInt() ?? 0,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
   }
 
   @override
-  Future<void> updateProfile({
+  Future<UserProfile> updateProfile({
     required String uid,
     required String displayName,
     required String bio,
   }) async {
+    if (displayName.isEmpty) {
+      throw const ProfileException('Display name must not be empty.');
+    }
     await _firestore.collection('users').doc(uid).update({
       'displayName': displayName,
       'bio': bio,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    return getProfile(uid);
   }
 
   @override
-  Future<String> uploadAvatar({
+  Future<UserProfile> uploadAvatar({
     required String uid,
-    required List<int> imageBytes,
-    required String filename,
+    required String imagePath,
   }) async {
+    final filename = imagePath.split('/').last;
     final ref = _storage.ref('avatars/$uid/$filename');
-    await ref.putData(Uint8List.fromList(imageBytes));
+    await ref.putFile(File(imagePath));
     final downloadUrl = await ref.getDownloadURL();
     await _firestore.collection('users').doc(uid).update({
       'avatarUrl': downloadUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     });
-    return downloadUrl;
+    return getProfile(uid);
   }
 
   @override
-  Future<void> deleteAccount(String uid) async {
+  Future<void> deleteAccount({required String uid}) async {
     await _firestore.collection('users').doc(uid).delete();
-    await _firebaseAuth.currentUser!.delete();
+    await _firebaseAuth?.currentUser?.delete();
   }
 }

@@ -23,18 +23,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
     } on ProfileException {
       rethrow;
     } catch (e) {
-      throw ProfileException(message: e.toString());
+      throw ProfileException(e.toString());
     }
   }
 
   @override
-  Future<void> updateProfile({
+  Future<UserProfile> updateProfile({
     required String uid,
     required String displayName,
     required String bio,
   }) async {
     try {
-      await _dataSource.updateProfile(
+      return await _dataSource.updateProfile(
         uid: uid,
         displayName: displayName,
         bio: bio,
@@ -42,37 +42,35 @@ class ProfileRepositoryImpl implements ProfileRepository {
     } on ProfileException {
       rethrow;
     } catch (e) {
-      throw ProfileException(message: e.toString());
+      throw ProfileException(e.toString());
     }
   }
 
   @override
-  Future<String> uploadAvatar({
+  Future<UserProfile> uploadAvatar({
     required String uid,
-    required List<int> imageBytes,
-    required String filename,
+    required String imagePath,
   }) async {
     try {
       return await _dataSource.uploadAvatar(
         uid: uid,
-        imageBytes: imageBytes,
-        filename: filename,
+        imagePath: imagePath,
       );
     } on ProfileException {
       rethrow;
     } catch (e) {
-      throw ProfileException(message: e.toString());
+      throw ProfileException(e.toString());
     }
   }
 
   @override
-  Future<void> deleteAccount(String uid) async {
+  Future<void> deleteAccount({required String uid}) async {
     try {
-      await _dataSource.deleteAccount(uid);
+      await _dataSource.deleteAccount(uid: uid);
     } on ProfileException {
       rethrow;
     } catch (e) {
-      throw ProfileException(message: e.toString());
+      throw ProfileException(e.toString());
     }
   }
 }

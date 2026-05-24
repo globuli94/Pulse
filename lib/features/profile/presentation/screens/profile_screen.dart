@@ -25,14 +25,11 @@ class ProfileScreen extends StatelessWidget {
       imageQuality: 80,
     );
     if (xFile == null) return;
-    final bytes = await xFile.readAsBytes();
     if (!context.mounted) return;
     context.read<ProfileBloc>().add(
           AvatarUploadRequested(
             uid: uid,
-            imageBytes: bytes,
-            filename:
-                'avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            imagePath: xFile.path,
           ),
         );
   }
@@ -81,7 +78,7 @@ class ProfileScreen extends StatelessWidget {
       listener: (context, state) {
         if (state is ProfileFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error)),
+            SnackBar(content: Text(state.message)),
           );
         }
       },
@@ -92,16 +89,17 @@ class ProfileScreen extends StatelessWidget {
           );
         }
 
-        if (state is ProfileLoaded || state is ProfileUpdating) {
+        if (state is ProfileLoaded ||
+            (state is ProfileUpdating && state.profile != null)) {
           final profile = state is ProfileLoaded
               ? state.profile
-              : (state as ProfileUpdating).profile;
+              : (state as ProfileUpdating).profile!;
 
           return Scaffold(
             appBar: AppBar(title: const Text('Profile')),
             body: Column(
               children: [
-                if (state is ProfileUpdating)
+                if (state is ProfileUpdating && state.profile != null)
                   const LinearProgressIndicator(),
                 Expanded(
                   child: SingleChildScrollView(
@@ -148,8 +146,9 @@ class ProfileScreen extends StatelessWidget {
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute<void>(
-                              builder: (_) => EditProfileScreen(
-                                profile: profile,
+                              builder: (_) => BlocProvider.value(
+                                value: context.read<ProfileBloc>(),
+                                child: const EditProfileScreen(),
                               ),
                             ),
                           ),

@@ -12,7 +12,7 @@ sealed class ProfileEvent extends Equatable {
 /// Request to load the profile for [uid].
 final class ProfileLoadRequested extends ProfileEvent {
   /// Creates a [ProfileLoadRequested] event.
-  const ProfileLoadRequested({required this.uid});
+  const ProfileLoadRequested({this.uid = ''});
 
   /// The uid of the profile to load.
   final String uid;
@@ -25,7 +25,7 @@ final class ProfileLoadRequested extends ProfileEvent {
 final class ProfileUpdateRequested extends ProfileEvent {
   /// Creates a [ProfileUpdateRequested] event.
   const ProfileUpdateRequested({
-    required this.uid,
+    this.uid = '',
     required this.displayName,
     required this.bio,
   });
@@ -47,28 +47,24 @@ final class ProfileUpdateRequested extends ProfileEvent {
 final class AvatarUploadRequested extends ProfileEvent {
   /// Creates an [AvatarUploadRequested] event.
   const AvatarUploadRequested({
-    required this.uid,
-    required this.imageBytes,
-    required this.filename,
+    this.uid = '',
+    required this.imagePath,
   });
 
   /// The uid of the user whose avatar is being uploaded.
   final String uid;
 
-  /// The raw bytes of the image to upload.
-  final List<int> imageBytes;
-
-  /// The filename for the uploaded image.
-  final String filename;
+  /// The local file path of the image to upload.
+  final String imagePath;
 
   @override
-  List<Object?> get props => [uid, imageBytes, filename];
+  List<Object?> get props => [uid, imagePath];
 }
 
 /// Request to delete the account for [uid].
 final class AccountDeleteRequested extends ProfileEvent {
   /// Creates an [AccountDeleteRequested] event.
-  const AccountDeleteRequested({required this.uid});
+  const AccountDeleteRequested({this.uid = ''});
 
   /// The uid of the user whose account is being deleted.
   final String uid;

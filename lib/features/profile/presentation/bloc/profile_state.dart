@@ -39,13 +39,13 @@ final class ProfileLoaded extends ProfileState {
   List<Object?> get props => [profile];
 }
 
-/// Profile is being updated. Carries the stale profile for display.
+/// Profile is being updated. Optionally carries the stale profile for display.
 final class ProfileUpdating extends ProfileState {
   /// Creates a [ProfileUpdating] state.
-  const ProfileUpdating({required this.profile});
+  const ProfileUpdating({this.profile});
 
-  /// The stale profile shown while the update is running.
-  final UserProfile profile;
+  /// The stale profile shown while the update is running (null if not available).
+  final UserProfile? profile;
 
   @override
   List<Object?> get props => [profile];
@@ -54,13 +54,13 @@ final class ProfileUpdating extends ProfileState {
 /// A profile operation failed.
 final class ProfileFailure extends ProfileState {
   /// Creates a [ProfileFailure] state.
-  const ProfileFailure({required this.error});
+  const ProfileFailure({required this.message});
 
   /// A human-readable error message.
-  final String error;
+  final String message;
 
   @override
-  List<Object?> get props => [error];
+  List<Object?> get props => [message];
 }
 
 /// Account has been deleted successfully.

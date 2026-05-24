@@ -78,7 +78,7 @@ class UserProfileScreen extends StatelessWidget {
         if (state is ProfileFailure) {
           return Scaffold(
             appBar: AppBar(title: Text(title)),
-            body: Center(child: Text(state.error)),
+            body: Center(child: Text(state.message)),
           );
         }
 

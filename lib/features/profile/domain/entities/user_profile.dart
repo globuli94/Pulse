@@ -16,6 +16,8 @@ class UserProfile extends Equatable {
     required this.bio,
     required this.avatarUrl,
     required this.postCount,
+    required this.followerCount,
+    required this.followingCount,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -38,6 +40,12 @@ class UserProfile extends Equatable {
   /// The number of posts the user has created.
   final int postCount;
 
+  /// The number of followers the user has.
+  final int followerCount;
+
+  /// The number of accounts the user is following.
+  final int followingCount;
+
   /// When the profile was created.
   final DateTime createdAt;
 
@@ -52,6 +60,8 @@ class UserProfile extends Equatable {
     String? bio,
     String? avatarUrl,
     int? postCount,
+    int? followerCount,
+    int? followingCount,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -62,6 +72,8 @@ class UserProfile extends Equatable {
       bio: bio ?? this.bio,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       postCount: postCount ?? this.postCount,
+      followerCount: followerCount ?? this.followerCount,
+      followingCount: followingCount ?? this.followingCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -75,6 +87,8 @@ class UserProfile extends Equatable {
         bio,
         avatarUrl,
         postCount,
+        followerCount,
+        followingCount,
         createdAt,
         updatedAt,
       ];
