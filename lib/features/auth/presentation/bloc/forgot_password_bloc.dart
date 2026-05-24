@@ -2,9 +2,9 @@
 //
 // ForgotPasswordBloc — handles password-reset email requests.
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/exceptions/auth_exception.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 part 'forgot_password_event.dart';
@@ -29,7 +29,7 @@ class ForgotPasswordBloc extends Bloc<ForgotPasswordEvent, ForgotPasswordState> 
     try {
       await _repository.sendPasswordResetEmail(event.email);
       emit(const ForgotPasswordSuccess());
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       emit(ForgotPasswordFailure(message: _messageFromCode(e.code)));
     } catch (_) {
       emit(const ForgotPasswordFailure(message: 'An unexpected error occurred.'));

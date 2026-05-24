@@ -2,9 +2,9 @@
 //
 // SignUpBloc — handles email/password account-creation form submissions.
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/exceptions/auth_exception.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 part 'sign_up_event.dart';
@@ -32,7 +32,7 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
     try {
       await _repository.signUpWithEmail(event.email, event.password);
       emit(const SignUpInitial());
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       emit(SignUpFailure(message: _messageFromCode(e.code)));
     } catch (_) {
       emit(const SignUpFailure(message: 'An unexpected error occurred.'));

@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../domain/exceptions/auth_exception.dart';
 import 'auth_remote_data_source.dart';
 
 /// Firebase-backed implementation of [AuthRemoteDataSource].
@@ -28,37 +29,54 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
 
   @override
   Future<void> signUpWithEmail(String email, String password) async {
-    final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    await _writeUserProfile(credential.user!, provider: 'email');
+    try {
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await _writeUserProfile(credential.user!, provider: 'email');
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(code: e.code, message: e.message);
+    }
   }
 
   @override
   Future<void> signInWithEmail(String email, String password) async {
-    await _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(code: e.code, message: e.message);
+    }
   }
 
   @override
   Future<void> signInWithGoogle() async {
-    final googleUser = await GoogleSignIn.instance.authenticate();
-    final idToken = googleUser.authentication.idToken;
-    final credential = GoogleAuthProvider.credential(idToken: idToken);
+    try {
+      final googleUser = await GoogleSignIn.instance.authenticate();
+      final idToken = googleUser.authentication.idToken;
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
 
-    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
 
-    if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-      await _writeUserProfile(userCredential.user!, provider: 'google');
+      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+        await _writeUserProfile(userCredential.user!, provider: 'google');
+      }
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(code: e.code, message: e.message);
     }
   }
 
   @override
   Future<void> sendPasswordResetEmail(String email) async {
-    await _firebaseAuth.sendPasswordResetEmail(email: email);
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(code: e.code, message: e.message);
+    }
   }
 
   @override

@@ -2,9 +2,9 @@
 //
 // LoginBloc — handles email/password and Google sign-in form submissions.
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/exceptions/auth_exception.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 part 'login_event.dart';
@@ -33,7 +33,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       await _repository.signInWithEmail(event.email, event.password);
       emit(const LoginInitial());
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       emit(LoginFailure(message: _messageFromCode(e.code)));
     } catch (_) {
       emit(const LoginFailure(message: 'An unexpected error occurred.'));
@@ -48,7 +48,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       await _repository.signInWithGoogle();
       emit(const LoginInitial());
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       emit(LoginFailure(message: _messageFromCode(e.code)));
     } catch (_) {
       emit(const LoginFailure(message: 'An unexpected error occurred.'));
