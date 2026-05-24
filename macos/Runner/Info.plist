@@ -28,6 +28,8 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pulse needs access to your photo library to upload a profile photo.</string>
 	<key>GIDClientID</key>
 	<string>694308970318-d2ef6qgdk14jqvbumchjigrvt91gntna.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>

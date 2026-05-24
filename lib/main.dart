@@ -5,6 +5,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +16,10 @@ import 'features/auth/data/datasources/auth_firebase_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/profile/data/datasources/profile_firebase_data_source.dart';
+import 'features/profile/data/repositories/profile_repository_impl.dart';
+import 'features/profile/domain/repositories/profile_repository.dart';
+import 'features/profile/presentation/bloc/profile_bloc.dart';
 import 'firebase_options.dart';
 
 /// Application entry point.
@@ -42,8 +47,8 @@ Future<void> main() async {
 
 /// Root application widget.
 ///
-/// Provides [AuthRepository] and [AuthBloc] to the entire widget tree via
-/// [MultiRepositoryProvider] and [MultiBlocProvider].
+/// Provides [AuthRepository], [ProfileRepository], [AuthBloc], and
+/// [ProfileBloc] to the entire widget tree.
 class PulseApp extends StatelessWidget {
   /// Creates a [PulseApp].
   const PulseApp({
@@ -64,10 +69,25 @@ class PulseApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>.value(value: _authRepository),
+        RepositoryProvider<ProfileRepository>(
+          create: (context) => ProfileRepositoryImpl(
+            dataSource: ProfileFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+              storage: FirebaseStorage.instance,
+              firebaseAuth: FirebaseAuth.instance,
+            ),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: _authBloc),
+          BlocProvider<ProfileBloc>(
+            create: (context) => ProfileBloc(
+              profileRepository: context.read<ProfileRepository>(),
+              authRepository: context.read<AuthRepository>(),
+            ),
+          ),
         ],
         child: MaterialApp.router(
           title: 'Pulse',
