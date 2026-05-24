@@ -113,13 +113,23 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
     User user, {
     required String provider,
   }) async {
+    final emailPrefix = (user.email ?? user.uid).split('@').first;
+    final safeUsername = emailPrefix
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+
     await _firestore.collection('users').doc(user.uid).set(
       {
         'uid': user.uid,
-        'email': user.email ?? '',
-        'displayName': user.displayName ?? '',
+        'displayName': user.displayName ?? emailPrefix,
+        'username': safeUsername,
+        'bio': '',
+        'avatarUrl': user.photoURL ?? '',
+        'postCount': 0,
+        'followerCount': 0,
+        'followingCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
-        'provider': provider,
+        'updatedAt': FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
     );

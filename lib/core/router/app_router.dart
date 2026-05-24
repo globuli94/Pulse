@@ -15,6 +15,9 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/home/presentation/screens/shell_screen.dart';
+import '../../features/profile/domain/repositories/profile_repository.dart';
+import '../../features/profile/presentation/bloc/profile_bloc.dart';
+import '../../features/profile/presentation/screens/user_profile_screen.dart';
 import 'go_router_refresh_stream.dart';
 
 /// Creates the application [GoRouter] with an auth-aware redirect guard.
@@ -74,6 +77,18 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
       GoRoute(
         path: '/home',
         builder: (context, state) => const ShellScreen(),
+      ),
+      GoRoute(
+        path: '/profile/:uid',
+        builder: (context, state) {
+          final uid = state.pathParameters['uid']!;
+          return BlocProvider<ProfileBloc>(
+            create: (ctx) => ProfileBloc(
+              repository: ctx.read<ProfileRepository>(),
+            )..add(ProfileLoadRequested(uid: uid)),
+            child: UserProfileScreen(uid: uid),
+          );
+        },
       ),
     ],
   );
