@@ -45,6 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pulse needs access to your photo library to upload a profile photo.</string>
 	<key>GIDClientID</key>
 	<string>694308970318-0l4f5u1170ujrngs5ia08ilch4gr2i7o.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>

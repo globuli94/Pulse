@@ -20,6 +20,8 @@ dependencies:
   go_router: any
   google_fonts: any
   google_sign_in: any
+  equatable: any
+  image_picker: any
 
 dev_dependencies:
   flutter_test:

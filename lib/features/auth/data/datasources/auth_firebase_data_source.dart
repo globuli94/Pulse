@@ -116,10 +116,14 @@ class AuthFirebaseDataSource implements AuthRemoteDataSource {
     await _firestore.collection('users').doc(user.uid).set(
       {
         'uid': user.uid,
-        'email': user.email ?? '',
         'displayName': user.displayName ?? '',
+        'username': user.displayName ?? user.email?.split('@').first ?? '',
+        'bio': '',
+        'avatarUrl': null,
+        'followerCount': 0,
+        'followingCount': 0,
+        'postCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
-        'provider': provider,
       },
       SetOptions(merge: true),
     );

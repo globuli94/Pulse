@@ -1,16 +1,160 @@
 // lib/features/profile/presentation/screens/profile_screen.dart
 //
-// ProfileScreen — placeholder screen for the profile tab.
+// ProfileScreen — own profile tab shown to the authenticated user.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-/// Placeholder profile screen. Content will be implemented in a future ticket.
-class ProfileScreen extends StatelessWidget {
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../bloc/profile_bloc.dart';
+import '../widgets/profile_avatar.dart';
+
+/// Displays the authenticated user's own profile.
+///
+/// Reads from the global [ProfileBloc]. On build it dispatches
+/// [ProfileLoadRequested] with the authenticated user's UID.
+class ProfileScreen extends StatefulWidget {
   /// Creates a [ProfileScreen].
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String? _loadedUid;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      final uid = authState.user.uid;
+      if (_loadedUid != uid) {
+        _loadedUid = uid;
+        context.read<ProfileBloc>().add(ProfileLoadRequested(uid: uid));
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will permanently delete your account, posts, and avatar. '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<ProfileBloc>().add(const ProfileDeleteAccountRequested());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold();
+    return BlocListener<ProfileBloc, ProfileState>(
+      listener: (context, state) {
+        // ProfileSignedOut and ProfileAccountDeleted: AuthBloc stream will
+        // emit Unauthenticated automatically, and the router guard will
+        // redirect to /login. No manual navigation needed.
+      },
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        builder: (context, state) {
+          if (state is ProfileLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (state is ProfileError) {
+            return Scaffold(
+              body: Center(child: Text(state.message)),
+            );
+          }
+
+          final profile = switch (state) {
+            ProfileLoaded(:final profile) => profile,
+            ProfileUpdating(:final profile) => profile,
+            ProfileUpdateSuccess(:final profile) => profile,
+            _ => null,
+          };
+
+          if (profile == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ProfileAvatar(avatarUrl: profile.avatarUrl, radius: 80),
+                      const SizedBox(height: 16),
+                      Text(
+                        profile.displayName,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        profile.bio.isNotEmpty ? profile.bio : 'No bio yet.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${profile.postCount} posts',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      TextButton(
+                        onPressed: () => context.push('/edit-profile'),
+                        child: const Text('Edit Profile'),
+                      ),
+                      TextButton(
+                        onPressed: () => context
+                            .read<ProfileBloc>()
+                            .add(const ProfileSignOutRequested()),
+                        child: const Text('Logout'),
+                      ),
+                      TextButton(
+                        onPressed: () => _confirmDeleteAccount(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Delete Account'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
