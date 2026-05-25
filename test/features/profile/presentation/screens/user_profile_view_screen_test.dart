@@ -19,9 +19,27 @@ void main() {
   late MockUserProfileBloc mockUserProfileBloc;
   late MockFollowBloc mockFollowBloc;
 
+  setUpAll(() {
+    registerFallbackValue(const FollowStatusCheckRequested(
+      followerId: 'fallback-follower',
+      followeeId: 'fallback-followee',
+    ));
+  });
+
   setUp(() {
     mockUserProfileBloc = MockUserProfileBloc();
     mockFollowBloc = MockFollowBloc();
+    // Ensure the mock blocs have proper initial states
+    whenListen(
+      mockUserProfileBloc,
+      Stream.value(const UserProfileLoading()),
+      initialState: const UserProfileLoading(),
+    );
+    whenListen(
+      mockFollowBloc,
+      Stream.value(const FollowInitial()),
+      initialState: const FollowInitial(),
+    );
   });
 
   group('UserProfileViewScreen', () {
