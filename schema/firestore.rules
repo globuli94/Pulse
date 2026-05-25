@@ -22,8 +22,30 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['displayName', 'bio', 'avatarUrl', 'postCount']);
 
+      // Any authenticated user may update follower/following counts (for follow/unfollow transactions)
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['followerCount', 'followingCount']);
+
       // Owner may delete their own document as part of account deletion
       allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ---------------------------------------------------------------
+    // follows/{followId}
+    // ---------------------------------------------------------------
+    match /follows/{followId} {
+
+      // Any authenticated user may read any follow document (e.g. check if following)
+      allow read: if request.auth != null;
+
+      // Owner may create a follow — followerId must match the authenticated user
+      allow create: if request.auth != null
+                    && request.resource.data.followerId == request.auth.uid;
+
+      // Owner may delete their own follow
+      allow delete: if request.auth != null
+                    && resource.data.followerId == request.auth.uid;
     }
 
     // ---------------------------------------------------------------

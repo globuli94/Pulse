@@ -23,6 +23,7 @@ final class PostsFeedLoading extends PostsFeedState {
 final class PostsFeedLoaded extends PostsFeedState {
   const PostsFeedLoaded({
     required this.posts,
+    this.authorIds = const [],
     this.hasMore = false,
     this.cursor,
     this.isLoadingMore = false,
@@ -30,6 +31,13 @@ final class PostsFeedLoaded extends PostsFeedState {
 
   /// All posts loaded so far (accumulated across pages).
   final List<Post> posts;
+
+  /// The author-ID filter used when fetching this page.
+  ///
+  /// Forwarded to subsequent [PostsFeedNextPageRequested] calls so that
+  /// pagination always respects the same filter set. Defaults to an empty
+  /// list which means no filter (all posts).
+  final List<String> authorIds;
 
   /// Whether another page of posts is available.
   final bool hasMore;
@@ -40,9 +48,11 @@ final class PostsFeedLoaded extends PostsFeedState {
   /// True while the next page is being fetched.
   final bool isLoadingMore;
 
+  /// Returns a copy with [isLoadingMore] overridden.
   PostsFeedLoaded copyWith({bool? isLoadingMore}) {
     return PostsFeedLoaded(
       posts: posts,
+      authorIds: authorIds,
       hasMore: hasMore,
       cursor: cursor,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,

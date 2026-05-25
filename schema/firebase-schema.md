@@ -34,6 +34,7 @@
 | Authenticated user | Read any user profile | `request.auth != null` |
 | Authenticated user | Create own document | `request.auth.uid == resource-id` (first sign-in) |
 | Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `postCount` |
+| Any authenticated user | Update `followerCount` / `followingCount` | Atomic increment/decrement during follow/unfollow transactions |
 | Owner | Delete own document | `request.auth.uid == uid` (account deletion) |
 
 ---
@@ -70,6 +71,35 @@
 
 ---
 
+### `follows` — path: `follows/{followId}`
+
+**Purpose:** Tracks follow relationships between users. Document ID is `{followerId}_{followeeId}` — a composite key that ensures uniqueness and enables O(1) existence checks.
+
+**Owner:** `followerId` field (Firebase Auth UID of the follower)
+
+| Field | Firestore Type | Required | Description |
+|---|---|---|---|
+| `followerId` | string | required | Firebase Auth UID of the user doing the following |
+| `followeeId` | string | required | Firebase Auth UID of the user being followed |
+| `createdAt` | timestamp | required | Server timestamp set when the follow was created |
+
+**Access Patterns:**
+
+| Who | Operation | Condition |
+|---|---|---|
+| Any authenticated user | Read any follow document | `request.auth != null` (e.g. check if following before showing button) |
+| Owner | Create own follow document | `request.resource.data.followerId == request.auth.uid` |
+| Owner | Delete own follow document | `resource.data.followerId == request.auth.uid` |
+
+**Query Patterns:**
+
+| Query | Where | OrderBy | Purpose |
+|---|---|---|---|
+| Get followed users | `followerId == currentUid` | `createdAt ASC` | Fetch followeeId list for feed construction |
+| Check if following | doc ID `{currentUid}_{targetUid}` | N/A | O(1) existence check |
+
+---
+
 ### Firebase Storage — Post Images
 
 **Path:** `posts/{userId}/{postId}/image`
@@ -90,6 +120,7 @@
 | Collection | Fields | Notes |
 |---|---|---|
 | `posts` | `userId ASC`, `createdAt DESC` | User-specific post list query |
+| `follows` | `followerId ASC`, `createdAt ASC` | Fetch list of followed UIDs for feed construction |
 
 See `firestore.indexes.json` for the machine-readable definition.
 

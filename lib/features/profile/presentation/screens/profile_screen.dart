@@ -129,6 +129,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         '${profile.postCount} posts',
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${profile.followerCount} followers · '
+                        '${profile.followingCount} following',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
                       const SizedBox(height: 24),
                       TextButton(
                         onPressed: () => context.push('/edit-profile'),

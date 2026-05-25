@@ -16,6 +16,8 @@ class UserProfile extends Equatable {
     required this.bio,
     required this.avatarUrl,
     required this.postCount,
+    this.followerCount = 0,
+    this.followingCount = 0,
   });
 
   /// Firebase Auth UID; mirrors the Firestore document ID.
@@ -33,6 +35,20 @@ class UserProfile extends Equatable {
   /// Cached post count; default 0.
   final int postCount;
 
+  /// Cached follower count; default 0.
+  final int followerCount;
+
+  /// Cached following count; default 0.
+  final int followingCount;
+
   @override
-  List<Object?> get props => [uid, displayName, bio, avatarUrl, postCount];
+  List<Object?> get props => [
+        uid,
+        displayName,
+        bio,
+        avatarUrl,
+        postCount,
+        followerCount,
+        followingCount,
+      ];
 }

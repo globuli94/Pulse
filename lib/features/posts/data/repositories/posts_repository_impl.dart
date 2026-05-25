@@ -26,10 +26,15 @@ class PostsRepositoryImpl implements PostsRepository {
   }
 
   @override
-  Future<PostsFeedPage> fetchFeed({Object? cursor, int limit = 15}) async {
+  Future<PostsFeedPage> fetchFeed({
+    Object? cursor,
+    int limit = 15,
+    List<String>? authorIds,
+  }) async {
     final raw = await _dataSource.fetchFeed(
       cursor: cursor as DocumentSnapshot?,
       limit: limit,
+      authorIds: authorIds,
     );
     return PostsFeedPage(
       posts: raw.posts.map(_mapToPost).toList(),
