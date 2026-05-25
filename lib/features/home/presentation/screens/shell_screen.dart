@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../feed/presentation/screens/feed_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../search/presentation/screens/search_screen.dart';
 
 /// Root navigation shell shown to authenticated users.
 ///
@@ -23,17 +24,22 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   int _currentIndex = 0;
 
-  static const List<Widget> _screens = [
-    FeedScreen(),
-    ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // SearchScreen provides its own SearchBloc and is included in the stack
+    // only when the Search tab is active.  This keeps Feed and Profile state
+    // alive across tab switches while avoiding eager BLoC creation for Search.
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          const FeedScreen(),
+          if (_currentIndex == 1)
+            const SearchScreen()
+          else
+            const SizedBox.shrink(),
+          const ProfileScreen(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -43,6 +49,11 @@ class _ShellScreenState extends State<ShellScreen> {
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Feed',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search_outlined),
+            activeIcon: Icon(Icons.search),
+            label: 'Search',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outlined),

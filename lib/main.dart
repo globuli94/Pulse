@@ -20,6 +20,9 @@ import 'features/follows/data/datasources/follows_firebase_data_source.dart';
 import 'features/follows/data/repositories/follows_repository_impl.dart';
 import 'features/follows/domain/repositories/follows_repository.dart';
 import 'features/posts/data/datasources/posts_firebase_data_source.dart';
+import 'features/search/data/datasources/search_firebase_data_source.dart';
+import 'features/search/data/repositories/search_repository_impl.dart';
+import 'features/search/domain/repositories/search_repository.dart';
 import 'features/posts/data/repositories/posts_repository_impl.dart';
 import 'features/posts/domain/repositories/posts_repository.dart';
 import 'features/posts/presentation/bloc/posts_feed_bloc.dart';
@@ -96,6 +99,13 @@ class PulseApp extends StatelessWidget {
         RepositoryProvider<FollowsRepository>(
           create: (context) => FollowsRepositoryImpl(
             dataSource: FollowsFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+            ),
+          ),
+        ),
+        RepositoryProvider<SearchRepository>(
+          create: (context) => SearchRepositoryImpl(
+            dataSource: SearchFirebaseDataSource(
               firestore: FirebaseFirestore.instance,
             ),
           ),
