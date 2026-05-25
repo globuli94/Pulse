@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pulse/features/posts/domain/entities/post.dart';
+import 'package:pulse/features/posts/domain/entities/posts_feed_page.dart';
 import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 
@@ -24,8 +25,13 @@ void main() {
       test(
           'emits [PostsFeedLoading, PostsFeedLoaded] when stream succeeds with empty list',
           () async {
-        when(() => mockPostsRepository.watchFeed())
-            .thenAnswer((_) => Stream.value(const []));
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: any(named: 'cursor'),
+              limit: any(named: 'limit'),
+            )).thenAnswer((_) async => const PostsFeedPage(
+              posts: [],
+              hasMore: false,
+            ));
 
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
 
@@ -46,8 +52,13 @@ void main() {
           imageUrl: null,
         );
 
-        when(() => mockPostsRepository.watchFeed())
-            .thenAnswer((_) => Stream.value([testPost]));
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: any(named: 'cursor'),
+              limit: any(named: 'limit'),
+            )).thenAnswer((_) async => PostsFeedPage(
+              posts: [testPost],
+              hasMore: false,
+            ));
 
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
 
@@ -58,8 +69,10 @@ void main() {
       });
 
       test('emits PostsFeedError when stream throws', () async {
-        when(() => mockPostsRepository.watchFeed())
-            .thenAnswer((_) => Stream.error(Exception('Stream error')));
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: any(named: 'cursor'),
+              limit: any(named: 'limit'),
+            )).thenThrow(Exception('Fetch error'));
 
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
 
@@ -69,8 +82,8 @@ void main() {
       });
     });
 
-    group('stream updates', () {
-      test('emits new PostsFeedLoaded when stream emits new data', () async {
+    group('PostsFeedNextPageRequested', () {
+      test('accumulates posts from multiple pages', () async {
         final post1 = Post(
           id: '1',
           userId: 'user1',
@@ -89,23 +102,54 @@ void main() {
           imageUrl: null,
         );
 
-        when(() => mockPostsRepository.watchFeed()).thenAnswer(
-          (_) => Stream.fromIterable([[post1], [post1, post2]]),
-        );
+        // Page 1: one post, more available
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: null,
+              limit: any(named: 'limit'),
+            )).thenAnswer((_) async => PostsFeedPage(
+              posts: [post1],
+              hasMore: true,
+              cursor: 'cursor-page-2',
+            ));
 
+        // Page 2: one post, no more available
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: 'cursor-page-2',
+              limit: any(named: 'limit'),
+            )).thenAnswer((_) async => PostsFeedPage(
+              posts: [post2],
+              hasMore: false,
+            ));
+
+        // Load first page
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
+        await Future.delayed(const Duration(milliseconds: 100));
 
-        await Future.delayed(const Duration(milliseconds: 200));
+        expect(postsFeedBloc.state, isA<PostsFeedLoaded>());
+        expect((postsFeedBloc.state as PostsFeedLoaded).posts.length, equals(1));
+        expect((postsFeedBloc.state as PostsFeedLoaded).hasMore, isTrue);
+
+        // Load next page
+        postsFeedBloc.add(const PostsFeedNextPageRequested());
+        await Future.delayed(const Duration(milliseconds: 100));
 
         expect(postsFeedBloc.state, isA<PostsFeedLoaded>());
         expect((postsFeedBloc.state as PostsFeedLoaded).posts.length, equals(2));
+        expect((postsFeedBloc.state as PostsFeedLoaded).posts[0].id, equals('1'));
+        expect((postsFeedBloc.state as PostsFeedLoaded).posts[1].id, equals('2'));
+        expect((postsFeedBloc.state as PostsFeedLoaded).hasMore, isFalse);
       });
     });
 
     group('PostsDeleteRequested', () {
       test('calls repository.deletePost with correct postId and userId', () async {
-        when(() => mockPostsRepository.watchFeed())
-            .thenAnswer((_) => Stream.value(const []));
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: any(named: 'cursor'),
+              limit: any(named: 'limit'),
+            )).thenAnswer((_) async => const PostsFeedPage(
+              posts: [],
+              hasMore: false,
+            ));
         when(() => mockPostsRepository.deletePost(
           postId: 'post-123',
           userId: 'user-456',
