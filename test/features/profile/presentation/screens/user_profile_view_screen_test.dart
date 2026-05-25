@@ -349,7 +349,7 @@ void main() {
       );
 
       await tester.tap(find.widgetWithText(ElevatedButton, 'Follow').first);
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       verify(() => mockFollowBloc.add(any(
           that: isA<FollowRequested>()
@@ -391,7 +391,7 @@ void main() {
       );
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Unfollow').first);
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       verify(() => mockFollowBloc.add(any(
           that: isA<UnfollowRequested>()
