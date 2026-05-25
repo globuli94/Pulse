@@ -53,14 +53,17 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
   ) async {
     emit(const PostsFeedLoading());
     try {
-      final List<String> authorIds;
+      var authorIds = const <String>[];
       if (_followsRepository != null && _currentUserId.isNotEmpty) {
-        final followedIds = await _followsRepository.getFollowedUserIds(
-          followerId: _currentUserId,
-        );
-        authorIds = [_currentUserId, ...followedIds];
-      } else {
-        authorIds = const [];
+        try {
+          final followedIds = await _followsRepository.getFollowedUserIds(
+            followerId: _currentUserId,
+          );
+          authorIds = [_currentUserId, ...followedIds];
+        } catch (_) {
+          // Falls back to unfiltered feed if follows lookup fails.
+          authorIds = const [];
+        }
       }
       final page = await _repository.fetchFeed(
         authorIds: authorIds.isEmpty ? null : authorIds,
