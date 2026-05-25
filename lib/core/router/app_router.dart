@@ -14,6 +14,8 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/follows/domain/repositories/follows_repository.dart';
+import '../../features/follows/presentation/bloc/follow_bloc.dart';
 import '../../features/home/presentation/screens/shell_screen.dart';
 import '../../features/posts/domain/repositories/posts_repository.dart';
 import '../../features/posts/presentation/bloc/create_post_bloc.dart';
@@ -99,11 +101,29 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
         path: '/profile/:uid',
         builder: (context, state) {
           final uid = state.pathParameters['uid']!;
-          return BlocProvider<UserProfileBloc>(
-            create: (_) => UserProfileBloc(
-              profileRepository: context.read<ProfileRepository>(),
-            )..add(UserProfileLoadRequested(uid: uid)),
-            child: const UserProfileViewScreen(),
+          final authState = context.read<AuthBloc>().state;
+          final currentUserId =
+              authState is Authenticated ? authState.user.uid : '';
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider<UserProfileBloc>(
+                create: (_) => UserProfileBloc(
+                  profileRepository: context.read<ProfileRepository>(),
+                )..add(UserProfileLoadRequested(uid: uid)),
+              ),
+              BlocProvider<FollowBloc>(
+                create: (_) => FollowBloc(
+                  followsRepository: context.read<FollowsRepository>(),
+                )..add(FollowStatusCheckRequested(
+                    followerId: currentUserId,
+                    followeeId: uid,
+                  )),
+              ),
+            ],
+            child: UserProfileViewScreen(
+              viewedUid: uid,
+              currentUserId: currentUserId,
+            ),
           );
         },
       ),

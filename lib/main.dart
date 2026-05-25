@@ -16,6 +16,9 @@ import 'features/auth/data/datasources/auth_firebase_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/follows/data/datasources/follows_firebase_data_source.dart';
+import 'features/follows/data/repositories/follows_repository_impl.dart';
+import 'features/follows/domain/repositories/follows_repository.dart';
 import 'features/posts/data/datasources/posts_firebase_data_source.dart';
 import 'features/posts/data/repositories/posts_repository_impl.dart';
 import 'features/posts/domain/repositories/posts_repository.dart';
@@ -90,6 +93,13 @@ class PulseApp extends StatelessWidget {
             ),
           ),
         ),
+        RepositoryProvider<FollowsRepository>(
+          create: (context) => FollowsRepositoryImpl(
+            dataSource: FollowsFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+            ),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -101,9 +111,16 @@ class PulseApp extends StatelessWidget {
             ),
           ),
           BlocProvider<PostsFeedBloc>(
-            create: (context) => PostsFeedBloc(
-              repository: context.read<PostsRepository>(),
-            )..add(const PostsFeedSubscriptionRequested()),
+            create: (context) {
+              final authState = context.read<AuthBloc>().state;
+              final currentUserId =
+                  authState is Authenticated ? authState.user.uid : '';
+              return PostsFeedBloc(
+                repository: context.read<PostsRepository>(),
+                followsRepository: context.read<FollowsRepository>(),
+                currentUserId: currentUserId,
+              )..add(const PostsFeedSubscriptionRequested());
+            },
           ),
         ],
         child: MaterialApp.router(
