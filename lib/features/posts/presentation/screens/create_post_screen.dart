@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/create_post_bloc.dart';
+import '../bloc/posts_feed_bloc.dart';
 
 /// Screen that allows the authenticated user to compose a new post.
 class CreatePostScreen extends StatefulWidget {
@@ -65,6 +66,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return BlocListener<CreatePostBloc, CreatePostState>(
       listener: (context, state) {
         if (state is CreatePostSuccess) {
+          context
+              .read<PostsFeedBloc>()
+              .add(const PostsFeedSubscriptionRequested());
           if (context.canPop()) {
             context.pop();
           } else {

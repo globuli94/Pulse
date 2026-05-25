@@ -56,11 +56,6 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Future<void> _onRefresh() async {
     context.read<PostsFeedBloc>().add(const PostsFeedSubscriptionRequested());
-    // Wait for the BLoC to leave the loading state before completing the
-    // refresh gesture.
-    await context.read<PostsFeedBloc>().stream.firstWhere(
-          (s) => s is PostsFeedLoaded || s is PostsFeedError,
-        );
   }
 
   @override
@@ -68,7 +63,7 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Feed')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/create-post'),
+        onPressed: () => context.push('/create-post'),
         child: const Icon(Icons.add),
       ),
       body: BlocBuilder<PostsFeedBloc, PostsFeedState>(
