@@ -2,7 +2,7 @@
 
 **Project:** Pulse
 **Classification:** Safe — rules tighten access (unauthenticated blocked); no field renames or removals.
-**Last updated:** 2026-05-24
+**Last updated:** 2026-05-25
 
 ---
 
@@ -36,6 +36,12 @@
 | Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `postCount` |
 | Any authenticated user | Update `followerCount` / `followingCount` | Atomic increment/decrement during follow/unfollow transactions |
 | Owner | Delete own document | `request.auth.uid == uid` (account deletion) |
+
+**Query Patterns:**
+
+| Collection | `.where()` fields | `.orderBy()` fields | Limit | Purpose | Composite Index Required |
+|---|---|---|---|---|---|
+| `users` | `displayName >= q`, `displayName <= q + '\uf8ff'` | `displayName ASC` | 20 | Prefix search by displayName for user search | **No** — range filter and orderBy are on the same field; single-field index on `displayName` is sufficient |
 
 ---
 
@@ -121,6 +127,7 @@
 |---|---|---|
 | `posts` | `userId ASC`, `createdAt DESC` | User-specific post list query |
 | `follows` | `followerId ASC`, `createdAt ASC` | Fetch list of followed UIDs for feed construction |
+| `users` | — | No composite index needed for displayName prefix query (range filter and orderBy on same field; single-field index sufficient) |
 
 See `firestore.indexes.json` for the machine-readable definition.
 
@@ -160,3 +167,36 @@ No changes to `firestore.rules` were required — the pre-existing rules already
 | macOS | `macos/Runner/GoogleService-Info.plist` | ✅ `CLIENT_ID` present, `IS_SIGNIN_ENABLED: true` | ✅ `REVERSED_CLIENT_ID` present |
 
 `firebase_options.dart` includes `iosClientId` for both iOS and macOS platform configs. ✅
+
+---
+
+## Firestore Rules Audit — SOCAA-503 User Search
+
+**Audit date:** 2026-05-25
+**Classification:** Safe — additive query pattern only; no field renames or removals.
+
+### Collection-Level Query Coverage
+
+The existing rule `allow read: if request.auth != null;` on `match /users/{uid}` covers **both** single-document reads and collection-level queries in Firestore. A collection query is permitted if and only if the security rules would allow reading every document in the result set. Because any authenticated user is allowed to read any `users` document, the displayName prefix range query is fully covered by the existing rule.
+
+**No changes to `schema/firestore.rules` are required.**
+
+### Composite Index Determination
+
+The displayName prefix query pattern is:
+```
+.where('displayName', '>=', q)
+.where('displayName', '<=', q + '\uf8ff')
+.orderBy('displayName')
+.limit(20)
+```
+
+Firestore requires a composite index only when a range filter is combined with an `orderBy` on a **different** field. Here the range filter and `orderBy` target the same field (`displayName`), so Firestore's auto-generated single-field index on `displayName` is sufficient.
+
+**No entry added to `firestore.indexes.json`.**
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — displayName prefix query pattern row added to `users` section | ✅ Done |
+| `firestore.indexes.json` — composite index not required; confirmed and documented | ✅ Done |
+| `firestore.rules` — collection-level query confirmed covered by existing `allow read` rule | ✅ No change needed |
