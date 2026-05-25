@@ -16,9 +16,13 @@ abstract class PostsRemoteDataSource {
   ///
   /// Pass [cursor] (the [DocumentSnapshot] from a previous page) to continue
   /// pagination. Omit [cursor] to start from the first page.
+  ///
+  /// When [authorIds] is non-null and non-empty, only posts whose `userId` is
+  /// in the list are returned. Firestore `in` queries are limited to 30 items.
   Future<PostsFeedRawPage> fetchFeed({
     DocumentSnapshot? cursor,
     int limit = 15,
+    List<String>? authorIds,
   });
 
   /// Creates a new post document and optionally uploads an image.

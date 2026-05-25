@@ -40,12 +40,29 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   Future<PostsFeedRawPage> fetchFeed({
     DocumentSnapshot? cursor,
     int limit = 15,
+    List<String>? authorIds,
   }) async {
+    // Firestore `in` query limit is 30 items. Assert in debug; clamp in release.
+    final filteredAuthorIds =
+        (authorIds != null && authorIds.isNotEmpty) ? authorIds : null;
+    assert(
+      filteredAuthorIds == null || filteredAuthorIds.length <= 30,
+      'authorIds must contain at most 30 items (Firestore in-query limit).',
+    );
+    final clampedIds = filteredAuthorIds != null &&
+            filteredAuthorIds.length > 30
+        ? filteredAuthorIds.take(30).toList()
+        : filteredAuthorIds;
+
     // Fetch one extra document to determine whether another page exists.
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('posts')
-        .orderBy('createdAt', descending: true)
-        .limit(limit + 1);
+    Query<Map<String, dynamic>> query = _firestore.collection('posts');
+
+    if (clampedIds != null) {
+      // Apply author filter before orderBy to satisfy Firestore index rules.
+      query = query.where('userId', whereIn: clampedIds);
+    }
+
+    query = query.orderBy('createdAt', descending: true).limit(limit + 1);
 
     if (cursor != null) {
       query = query.startAfterDocument(cursor);
