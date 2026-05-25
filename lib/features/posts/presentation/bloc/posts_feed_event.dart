@@ -14,6 +14,11 @@ final class PostsFeedSubscriptionRequested extends PostsFeedEvent {
   const PostsFeedSubscriptionRequested();
 }
 
+/// Requests the next page of posts to be appended to the feed.
+final class PostsFeedNextPageRequested extends PostsFeedEvent {
+  const PostsFeedNextPageRequested();
+}
+
 /// Requests deletion of a post.
 final class PostsDeleteRequested extends PostsFeedEvent {
   const PostsDeleteRequested({
