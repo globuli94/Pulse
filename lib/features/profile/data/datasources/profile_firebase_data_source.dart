@@ -131,8 +131,5 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
     }
     // 3. Delete Firebase Auth account.
     await _firebaseAuth.currentUser!.delete();
-    // 4. Clear the local auth session so the router redirects to sign-in
-    //    and cached credentials cannot be reused (BUG-001d).
-    await _firebaseAuth.signOut();
   }
 }
