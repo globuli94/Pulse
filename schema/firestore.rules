@@ -88,6 +88,27 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // notifications/{notificationId}
+    // ---------------------------------------------------------------
+    match /notifications/{notificationId} {
+
+      // Any authenticated user may create a notification for another user (actor writes for recipient)
+      allow create: if request.auth != null;
+
+      // Recipient may read their own notifications
+      allow read: if request.auth != null
+                  && request.auth.uid == resource.data.userId;
+
+      // Recipient may update isRead only
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['isRead']);
+
+      // Delete is denied for all users (no allow delete rule)
+    }
+
+    // ---------------------------------------------------------------
     // conversations/{conversationId}
     // ---------------------------------------------------------------
     match /conversations/{conversationId} {
