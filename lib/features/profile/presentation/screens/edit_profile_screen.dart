@@ -2,6 +2,8 @@
 //
 // EditProfileScreen — lets the authenticated user edit their profile.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -114,20 +116,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    ProfileAvatar(
-                      avatarUrl: _selectedAvatarPath != null
-                          ? null
-                          : _currentAvatarUrl,
-                      radius: 50,
+                    // Avatar with camera-icon overlay (BUG-001e).
+                    GestureDetector(
                       onTap: isUpdating ? null : _pickAvatar,
-                    ),
-                    if (_selectedAvatarPath != null) ...[
-                      const SizedBox(height: 8),
-                      const Text(
-                        'New photo selected',
-                        style: TextStyle(color: Colors.green),
+                      child: Stack(
+                        children: [
+                          if (_selectedAvatarPath != null)
+                            CircleAvatar(
+                              radius: 50,
+                              backgroundImage:
+                                  FileImage(File(_selectedAvatarPath!)),
+                            )
+                          else
+                            ProfileAvatar(
+                              avatarUrl: _currentAvatarUrl,
+                              radius: 50,
+                            ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                     const SizedBox(height: 24),
                     TextField(
                       controller: _displayNameController,
