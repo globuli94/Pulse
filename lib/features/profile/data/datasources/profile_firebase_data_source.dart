@@ -45,15 +45,15 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
     if (displayName != null) data['displayName'] = displayName;
     if (bio != null) data['bio'] = bio;
     if (avatarUrl != null) data['avatarUrl'] = avatarUrl;
-    if (data.isNotEmpty) {
-      await _firestore.collection('users').doc(uid).update(data);
-    }
+    if (data.isEmpty) return;
 
-    // Propagate author name/picture changes to existing posts so the feed
-    // always shows the author's current display name and avatar (BUG-001a).
+    await _firestore.collection('users').doc(uid).update(data);
+
+    // Propagate displayName/avatarUrl to all posts by this user.
     final postUpdates = <String, dynamic>{};
     if (displayName != null) postUpdates['displayName'] = displayName;
     if (avatarUrl != null) postUpdates['avatarUrl'] = avatarUrl;
+
     if (postUpdates.isNotEmpty) {
       final snapshot = await _firestore
           .collection('posts')

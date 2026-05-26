@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../../core/navigation/shell_tab_controller.dart';
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../features/home/presentation/bloc/shell_tab_cubit.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/posts_repository.dart';
@@ -70,7 +70,7 @@ class _PostCardBody extends StatelessWidget {
                   // instead of opening the read-only OtherProfileScreen.
                   onTap: () {
                     if (post.userId == currentUid) {
-                      context.read<ShellTabController>().value = 3;
+                      context.read<ShellTabCubit>().switchToTab(3);
                     } else {
                       context.push('/profile/${post.userId}');
                     }

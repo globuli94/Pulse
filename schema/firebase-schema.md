@@ -69,6 +69,7 @@
 | Authenticated user | Create own post | `request.auth.uid == request.resource.data.userId` |
 | Author | Delete own post | `request.auth.uid == resource.data.userId` |
 | Any authenticated user | Update `likeCount` | `FieldValue.increment(1)` or `FieldValue.increment(-1)` — like/unlike action |
+| Author | Update `displayName` and `avatarUrl` on own posts | `request.auth.uid == resource.data.userId` — profile update propagation (batch write from `updateProfile`) |
 
 **Query Patterns:**
 
@@ -468,3 +469,41 @@ All like lookups are single-document reads using the composite key `{userId}_{po
 | `firebase-schema.md` — `notifications` collection added; composite indexes table updated | ✅ Done |
 | `firestore.rules` — `notifications` create/read/update-isRead rules added; delete denied | ✅ Done |
 | `firestore.indexes.json` — two composite indexes added (`userId+createdAt`, `userId+isRead`) | ✅ Done |
+
+---
+
+## Firestore Rules Audit — SOCAA-530 BUG-002a Profile Save Permission-Denied
+
+**Audit date:** 2026-05-26
+**Classification:** Safe — additive rule only. New `allow update` on `posts` for author-owned `displayName`/`avatarUrl` fields. No field renames or removals.
+
+### Root Cause
+
+`ProfileFirebaseDataSource.updateProfile()` (BUG-001a fix) issues a Firestore batch write containing:
+1. `users/{userId}` — update `displayName`, `bio`, `avatarUrl` — **already allowed** by the existing owner-scoped update rule.
+2. `posts/{postId}` (one per post authored by the user) — update `displayName`, `avatarUrl` — **blocked**: the only existing `posts` update rule permitted `likeCount` only.
+
+Because Firestore evaluates every write in a batch independently, the batch failed with `permission-denied` and the profile was never saved.
+
+### Collections Affected
+
+| Collection | Change | Notes |
+|---|---|---|
+| `posts` | New `allow update` rule for author-owned `displayName` and `avatarUrl` | Additive; scoped to author (`resource.data.userId == request.auth.uid`) and allowed fields only |
+
+### Rules Coverage
+
+| Operation | Collection | Document | Who | Rule Added |
+|---|---|---|---|---|
+| Update `displayName` + `avatarUrl` | `posts` | `{postId}` | Post author (`request.auth.uid == resource.data.userId`) | `allow update` when `affectedKeys().hasOnly(['displayName', 'avatarUrl'])` ✅ |
+| Write `users/{userId}` profile fields | `users` | `{userId}` | Owner | Already covered by existing `allow update` for `['displayName', 'bio', 'avatarUrl', 'postCount']` ✅ |
+
+### Composite Indexes
+
+No new queries introduced. No composite index changes required.
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — posts access patterns updated; audit section added | ✅ Done |
+| `firestore.rules` — new `allow update` rule added to `posts` for author `displayName`/`avatarUrl` update | ✅ Done |
+| `firestore.indexes.json` — no composite index required; no changes needed | ✅ Confirmed |

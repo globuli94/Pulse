@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'core/navigation/shell_tab_controller.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/datasources/auth_firebase_data_source.dart';
@@ -24,6 +23,7 @@ import 'features/chat/presentation/bloc/unread_count_cubit.dart';
 import 'features/notifications/data/datasources/notifications_firebase_data_source.dart';
 import 'features/notifications/data/repositories/notifications_repository_impl.dart';
 import 'features/notifications/domain/repositories/notifications_repository.dart';
+import 'features/home/presentation/bloc/shell_tab_cubit.dart';
 import 'features/notifications/presentation/bloc/unread_notifications_count_cubit.dart';
 import 'features/follows/data/datasources/follows_firebase_data_source.dart';
 import 'features/follows/data/repositories/follows_repository_impl.dart';
@@ -89,10 +89,6 @@ class PulseApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>.value(value: _authRepository),
-        RepositoryProvider<ShellTabController>(
-          create: (_) => ShellTabController(),
-          dispose: (c) => c.dispose(),
-        ),
         RepositoryProvider<ProfileRepository>(
           create: (context) => ProfileRepositoryImpl(
             dataSource: ProfileFirebaseDataSource(
@@ -142,6 +138,9 @@ class PulseApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: _authBloc),
+          BlocProvider<ShellTabCubit>(
+            create: (_) => ShellTabCubit(),
+          ),
           BlocProvider<ProfileBloc>(
             create: (context) => ProfileBloc(
               profileRepository: context.read<ProfileRepository>(),
