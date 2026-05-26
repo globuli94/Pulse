@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:pulse/features/chat/domain/entities/conversation.dart';
+import 'package:pulse/features/chat/domain/entities/message.dart';
+import 'package:pulse/features/chat/domain/repositories/chat_repository.dart';
 import 'package:pulse/features/follows/presentation/bloc/follow_bloc.dart';
 import 'package:pulse/features/profile/domain/entities/user_profile.dart';
 import 'package:pulse/features/profile/presentation/bloc/user_profile_bloc.dart';
@@ -15,9 +18,43 @@ class MockUserProfileBloc extends MockBloc<UserProfileEvent, UserProfileState>
 class MockFollowBloc extends MockBloc<FollowEvent, FollowState>
     implements FollowBloc {}
 
+class MockChatRepository extends Mock implements ChatRepository {
+  @override
+  Stream<List<Conversation>> watchConversations(String userId) {
+    return const Stream.empty();
+  }
+
+  @override
+  Stream<List<Message>> watchMessages(String conversationId) {
+    return const Stream.empty();
+  }
+
+  @override
+  Future<void> sendMessage({
+    required String conversationId,
+    required String senderId,
+    required String otherUserId,
+    required String text,
+  }) async {}
+
+  @override
+  Future<String> getOrCreateConversation({
+    required String currentUserId,
+    required String otherUserId,
+  }) async =>
+      'conv1';
+
+  @override
+  Future<void> markAsRead({
+    required String conversationId,
+    required String userId,
+  }) async {}
+}
+
 void main() {
   late MockUserProfileBloc mockUserProfileBloc;
   late MockFollowBloc mockFollowBloc;
+  late MockChatRepository mockChatRepository;
 
   setUpAll(() {
     registerFallbackValue(const FollowStatusCheckRequested(
@@ -29,6 +66,7 @@ void main() {
   setUp(() {
     mockUserProfileBloc = MockUserProfileBloc();
     mockFollowBloc = MockFollowBloc();
+    mockChatRepository = MockChatRepository();
     // Ensure the mock blocs have proper initial states
     whenListen(
       mockUserProfileBloc,
@@ -42,6 +80,29 @@ void main() {
     );
   });
 
+  Widget createWidgetUnderTest({
+    required String viewedUid,
+    required String currentUserId,
+  }) {
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<ChatRepository>(create: (_) => mockChatRepository),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
+          BlocProvider<FollowBloc>.value(value: mockFollowBloc),
+        ],
+        child: MaterialApp(
+          home: UserProfileViewScreen(
+            viewedUid: viewedUid,
+            currentUserId: currentUserId,
+          ),
+        ),
+      ),
+    );
+  }
+
   group('UserProfileViewScreen', () {
     testWidgets('shows loading state with CircularProgressIndicator',
         (WidgetTester tester) async {
@@ -50,17 +111,9 @@ void main() {
       when(() => mockFollowBloc.state).thenReturn(const FollowInitial());
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -85,17 +138,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: false));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -121,17 +166,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: false));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -158,17 +195,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: false));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -194,17 +223,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: true));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -229,17 +250,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: false));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'current-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'current-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -264,17 +277,9 @@ void main() {
       when(() => mockFollowBloc.state).thenReturn(const FollowLoading());
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -299,17 +304,9 @@ void main() {
           .thenReturn(const FollowFailure(error: 'Network error'));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -334,17 +331,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: false));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
@@ -376,17 +365,9 @@ void main() {
           .thenReturn(const FollowLoaded(isFollowing: true));
 
       await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
-            BlocProvider<FollowBloc>.value(value: mockFollowBloc),
-          ],
-          child: const MaterialApp(
-            home: UserProfileViewScreen(
-              viewedUid: 'other-uid',
-              currentUserId: 'current-uid',
-            ),
-          ),
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
         ),
       );
 
