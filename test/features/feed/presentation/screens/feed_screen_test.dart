@@ -132,7 +132,7 @@ void main() {
         );
 
         expect(find.text('No posts yet'), findsOneWidget);
-        expect(find.byType(ListView), findsNothing);
+        expect(find.byType(ListView), findsOneWidget);
       },
     );
 

@@ -14,6 +14,7 @@ import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/profile/presentation/screens/profile_screen.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_posts_bloc.dart';
+import 'package:pulse/features/home/presentation/bloc/shell_tab_cubit.dart';
 import 'package:pulse/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:pulse/features/notifications/presentation/bloc/unread_notifications_count_cubit.dart';
 
@@ -36,6 +37,7 @@ void main() {
     late MockUnreadCountCubit mockUnreadCountCubit;
     late MockNotificationsRepository mockNotificationsRepository;
     late MockUnreadNotificationsCountCubit mockUnreadNotificationsCountCubit;
+    late ShellTabCubit shellTabCubit;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
@@ -46,6 +48,7 @@ void main() {
       mockUnreadCountCubit = MockUnreadCountCubit();
       mockNotificationsRepository = MockNotificationsRepository();
       mockUnreadNotificationsCountCubit = MockUnreadNotificationsCountCubit();
+      shellTabCubit = ShellTabCubit();
       when(() => mockChatRepository.watchConversations(any()))
           .thenAnswer((_) => const Stream.empty());
       when(() => mockUnreadCountCubit.state).thenReturn(0);
@@ -108,6 +111,7 @@ void main() {
             ],
             child: MultiBlocProvider(
               providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
                 BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
@@ -164,6 +168,7 @@ void main() {
             ],
             child: MultiBlocProvider(
               providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
                 BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
@@ -215,6 +220,7 @@ void main() {
             ],
             child: MultiBlocProvider(
               providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
                 BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
