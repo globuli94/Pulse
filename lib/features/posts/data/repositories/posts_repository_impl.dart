@@ -72,6 +72,13 @@ class PostsRepositoryImpl implements PostsRepository {
   }
 
   @override
+  Stream<List<Post>> watchPostsByUser(String uid) {
+    return _dataSource
+        .watchPostsByUser(uid)
+        .map((maps) => maps.map(_mapToPost).toList());
+  }
+
+  @override
   Future<void> likePost({required String postId, required String userId}) =>
       _dataSource.likePost(postId: postId, userId: userId);
 
