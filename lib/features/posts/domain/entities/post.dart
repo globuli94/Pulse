@@ -17,6 +17,7 @@ class Post extends Equatable {
     required this.text,
     this.imageUrl,
     required this.createdAt,
+    this.likeCount = 0,
   });
 
   /// Firestore document ID.
@@ -40,6 +41,9 @@ class Post extends Equatable {
   /// Creation timestamp.
   final DateTime createdAt;
 
+  /// Number of likes this post has received.
+  final int likeCount;
+
   @override
   List<Object?> get props => [
         id,
@@ -49,5 +53,6 @@ class Post extends Equatable {
         text,
         imageUrl,
         createdAt,
+        likeCount,
       ];
 }

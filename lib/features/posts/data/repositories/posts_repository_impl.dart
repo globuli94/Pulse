@@ -71,6 +71,18 @@ class PostsRepositoryImpl implements PostsRepository {
     return maps.map(_mapToPost).toList();
   }
 
+  @override
+  Future<void> likePost({required String postId, required String userId}) =>
+      _dataSource.likePost(postId: postId, userId: userId);
+
+  @override
+  Future<void> unlikePost({required String postId, required String userId}) =>
+      _dataSource.unlikePost(postId: postId, userId: userId);
+
+  @override
+  Future<bool> isLiked({required String postId, required String userId}) =>
+      _dataSource.isLiked(postId: postId, userId: userId);
+
   Post _mapToPost(Map<String, dynamic> map) {
     final createdAt = map['createdAt'];
     final DateTime dateTime;
@@ -88,6 +100,7 @@ class PostsRepositoryImpl implements PostsRepository {
       text: map['text'] as String,
       imageUrl: map['imageUrl'] as String?,
       createdAt: dateTime,
+      likeCount: (map['likeCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

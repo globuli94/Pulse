@@ -127,6 +127,53 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   }
 
   @override
+  Future<void> likePost({
+    required String postId,
+    required String userId,
+  }) async {
+    final likeId = '${userId}_$postId';
+    final batch = _firestore.batch();
+    batch.set(
+      _firestore.collection('likes').doc(likeId),
+      {
+        'postId': postId,
+        'userId': userId,
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+    );
+    batch.update(
+      _firestore.collection('posts').doc(postId),
+      {'likeCount': FieldValue.increment(1)},
+    );
+    await batch.commit();
+  }
+
+  @override
+  Future<void> unlikePost({
+    required String postId,
+    required String userId,
+  }) async {
+    final likeId = '${userId}_$postId';
+    final batch = _firestore.batch();
+    batch.delete(_firestore.collection('likes').doc(likeId));
+    batch.update(
+      _firestore.collection('posts').doc(postId),
+      {'likeCount': FieldValue.increment(-1)},
+    );
+    await batch.commit();
+  }
+
+  @override
+  Future<bool> isLiked({
+    required String postId,
+    required String userId,
+  }) async {
+    final likeId = '${userId}_$postId';
+    final doc = await _firestore.collection('likes').doc(likeId).get();
+    return doc.exists;
+  }
+
+  @override
   Future<void> deletePost({
     required String postId,
     required String userId,

@@ -9,6 +9,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/post.dart';
+import '../../domain/repositories/posts_repository.dart';
+import '../bloc/like_bloc.dart';
+import '../bloc/like_event.dart';
+import '../bloc/like_state.dart';
 import '../bloc/posts_feed_bloc.dart';
 
 /// Card widget that renders a single [Post].
@@ -23,9 +27,31 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final authState = context.read<AuthBloc>().state;
     final currentUid = authState is Authenticated ? authState.user.uid : null;
+
+    return BlocProvider<LikeBloc>(
+      key: ValueKey(post.id),
+      create: (ctx) => LikeBloc(repository: ctx.read<PostsRepository>())
+        ..add(LikeInitialised(
+          postId: post.id,
+          userId: currentUid ?? '',
+          initialLikeCount: post.likeCount,
+        )),
+      child: _PostCardBody(post: post, currentUid: currentUid),
+    );
+  }
+}
+
+class _PostCardBody extends StatelessWidget {
+  const _PostCardBody({required this.post, required this.currentUid});
+
+  final Post post;
+  final String? currentUid;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isOwner = currentUid != null && currentUid == post.userId;
 
     return Card(
@@ -92,6 +118,11 @@ class PostCard extends StatelessWidget {
                 ),
               ),
             ],
+            // Like button
+            _LikeButton(
+              postId: post.id,
+              userId: currentUid ?? '',
+            ),
           ],
         ),
       ),
@@ -106,5 +137,45 @@ class PostCard extends StatelessWidget {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${(diff.inDays / 7).floor()}w ago';
+  }
+}
+
+class _LikeButton extends StatelessWidget {
+  const _LikeButton({required this.postId, required this.userId});
+  final String postId;
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LikeBloc, LikeState>(
+      builder: (context, state) {
+        if (state is LikeLoading || state is LikeInitial) {
+          return const SizedBox(height: 32, width: 64);
+        }
+        final isLiked = state is LikeLoaded ? state.isLiked : false;
+        final likeCount = state is LikeLoaded ? state.likeCount : 0;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(
+                isLiked ? Icons.favorite : Icons.favorite_border,
+                color: isLiked
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              tooltip: isLiked ? 'Unlike' : 'Like',
+              onPressed: () => context.read<LikeBloc>().add(
+                    LikeToggleRequested(postId: postId, userId: userId),
+                  ),
+            ),
+            Text(
+              '$likeCount',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        );
+      },
+    );
   }
 }
