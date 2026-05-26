@@ -14,6 +14,8 @@ import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/profile/presentation/screens/profile_screen.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_posts_bloc.dart';
+import 'package:pulse/features/notifications/domain/repositories/notifications_repository.dart';
+import 'package:pulse/features/notifications/presentation/bloc/unread_notifications_count_cubit.dart';
 
 class MockAuthBloc extends Mock implements AuthBloc {}
 class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
@@ -21,6 +23,8 @@ class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState> impleme
 class MockProfilePostsBloc extends MockBloc<ProfilePostsEvent, ProfilePostsState> implements ProfilePostsBloc {}
 class MockChatRepository extends Mock implements ChatRepository {}
 class MockUnreadCountCubit extends MockCubit<int> implements UnreadCountCubit {}
+class MockNotificationsRepository extends Mock implements NotificationsRepository {}
+class MockUnreadNotificationsCountCubit extends MockCubit<int> implements UnreadNotificationsCountCubit {}
 
 void main() {
   group('Navigation Shell - Flow Tests', () {
@@ -30,6 +34,8 @@ void main() {
     late MockProfilePostsBloc mockProfilePostsBloc;
     late MockChatRepository mockChatRepository;
     late MockUnreadCountCubit mockUnreadCountCubit;
+    late MockNotificationsRepository mockNotificationsRepository;
+    late MockUnreadNotificationsCountCubit mockUnreadNotificationsCountCubit;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
@@ -38,10 +44,15 @@ void main() {
       mockProfilePostsBloc = MockProfilePostsBloc();
       mockChatRepository = MockChatRepository();
       mockUnreadCountCubit = MockUnreadCountCubit();
+      mockNotificationsRepository = MockNotificationsRepository();
+      mockUnreadNotificationsCountCubit = MockUnreadNotificationsCountCubit();
       when(() => mockChatRepository.watchConversations(any()))
           .thenAnswer((_) => const Stream.empty());
       when(() => mockUnreadCountCubit.state).thenReturn(0);
       when(() => mockUnreadCountCubit.stream)
+          .thenAnswer((_) => const Stream.empty());
+      when(() => mockUnreadNotificationsCountCubit.state).thenReturn(0);
+      when(() => mockUnreadNotificationsCountCubit.stream)
           .thenAnswer((_) => const Stream.empty());
       final testUser = AppUser(
         uid: 'test-uid',
@@ -86,8 +97,15 @@ void main() {
         );
 
         await tester.pumpWidget(
-          RepositoryProvider<ChatRepository>(
-            create: (_) => mockChatRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ChatRepository>(
+                create: (_) => mockChatRepository,
+              ),
+              RepositoryProvider<NotificationsRepository>(
+                create: (_) => mockNotificationsRepository,
+              ),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -95,6 +113,7 @@ void main() {
                 BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
                 BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
                 BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+                BlocProvider<UnreadNotificationsCountCubit>.value(value: mockUnreadNotificationsCountCubit),
               ],
               child: MaterialApp.router(
                 routerConfig: router,
@@ -111,6 +130,9 @@ void main() {
 
         // Verify "Profile" tab is present
         expect(find.text('Profile'), findsWidgets);
+
+        // Verify bell icon is visible on the AppBar
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       },
     );
 
@@ -131,8 +153,15 @@ void main() {
         );
 
         await tester.pumpWidget(
-          RepositoryProvider<ChatRepository>(
-            create: (_) => mockChatRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ChatRepository>(
+                create: (_) => mockChatRepository,
+              ),
+              RepositoryProvider<NotificationsRepository>(
+                create: (_) => mockNotificationsRepository,
+              ),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -140,6 +169,7 @@ void main() {
                 BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
                 BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
                 BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+                BlocProvider<UnreadNotificationsCountCubit>.value(value: mockUnreadNotificationsCountCubit),
               ],
               child: MaterialApp.router(
                 routerConfig: router,
@@ -174,8 +204,15 @@ void main() {
         );
 
         await tester.pumpWidget(
-          RepositoryProvider<ChatRepository>(
-            create: (_) => mockChatRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ChatRepository>(
+                create: (_) => mockChatRepository,
+              ),
+              RepositoryProvider<NotificationsRepository>(
+                create: (_) => mockNotificationsRepository,
+              ),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -183,6 +220,7 @@ void main() {
                 BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
                 BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
                 BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+                BlocProvider<UnreadNotificationsCountCubit>.value(value: mockUnreadNotificationsCountCubit),
               ],
               child: MaterialApp.router(
                 routerConfig: router,
