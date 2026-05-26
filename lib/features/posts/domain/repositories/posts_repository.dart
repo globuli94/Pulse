@@ -49,4 +49,19 @@ abstract class PostsRepository {
   ///
   /// Requires a Firestore composite index on `posts(userId ASC, createdAt DESC)`.
   Future<List<Post>> getPostsByUser(String uid);
+
+  /// Likes the post [postId] on behalf of [userId].
+  ///
+  /// Writes `likes/{userId}_{postId}` and increments `posts/{postId}.likeCount`.
+  Future<void> likePost({required String postId, required String userId});
+
+  /// Unlikes the post [postId] on behalf of [userId].
+  ///
+  /// Deletes `likes/{userId}_{postId}` and decrements `posts/{postId}.likeCount`.
+  Future<void> unlikePost({required String postId, required String userId});
+
+  /// Returns true if [userId] has liked [postId].
+  ///
+  /// Single-document read: `likes/{userId}_{postId}`.
+  Future<bool> isLiked({required String postId, required String userId});
 }

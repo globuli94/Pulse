@@ -58,6 +58,7 @@
 | `avatarUrl` | string | optional | Author's avatar URL captured at post time; null if no avatar |
 | `text` | string | required | Post body text |
 | `imageUrl` | string | optional | Download URL for the post image in Firebase Storage; null if no image |
+| `likeCount` | number | required | Cached count of likes; default 0; incremented/decremented atomically via `FieldValue.increment` |
 | `createdAt` | timestamp | required | Server timestamp set on creation |
 
 **Access Patterns:**
@@ -67,6 +68,7 @@
 | Authenticated user | Read any post | `request.auth != null` |
 | Authenticated user | Create own post | `request.auth.uid == request.resource.data.userId` |
 | Author | Delete own post | `request.auth.uid == resource.data.userId` |
+| Any authenticated user | Update `likeCount` | `FieldValue.increment(1)` or `FieldValue.increment(-1)` — like/unlike action |
 
 **Query Patterns:**
 
@@ -105,6 +107,32 @@
 | Get followers list | `followedId == uid` | — | No | Resolve follower list for profile screen |
 | Get following list | `followerId == uid` | — | No | Resolve following list for profile screen |
 | Check if following | doc ID `{currentUid}_{targetUid}` | N/A | No | O(1) existence check |
+
+---
+
+### `likes` — path: `likes/{likeId}`
+
+**Purpose:** Tracks which users have liked which posts. Document ID is `{userId}_{postId}` — a composite key ensuring uniqueness and enabling O(1) existence checks without a compound query.
+
+**Owner:** `userId` field (Firebase Auth UID of the user who liked the post)
+
+| Field | Firestore Type | Required | Description |
+|---|---|---|---|
+| `postId` | string | required | ID of the post being liked |
+| `userId` | string | required | Firebase Auth UID of the user who liked the post |
+| `createdAt` | timestamp | required | Server timestamp set when the like was created |
+
+**Access Patterns:**
+
+| Who | Operation | Condition |
+|---|---|---|
+| Any authenticated user | Read a like document | `request.auth != null` (e.g. check if current user liked a post) |
+| Owner | Create own like | `request.resource.data.userId == request.auth.uid` — set() with composite key |
+| Owner | Delete own like (unlike) | `resource.data.userId == request.auth.uid` — delete() with composite key |
+
+**Query Patterns:**
+
+All lookups are single-document reads using the composite key `{userId}_{postId}`. No compound queries, no `.orderBy()` — **no composite index required**.
 
 ---
 
@@ -238,3 +266,39 @@ All four access patterns are fully covered by existing rules. **No changes to `s
 | `firebase-schema.md` — profile posts query pattern documented; follows query patterns expanded | ✅ Done |
 | `firestore.indexes.json` — composite index (`userId ASC`, `createdAt DESC`) already present; no new entry needed | ✅ Confirmed |
 | `firestore.rules` — all four access patterns covered by existing `allow read` rules | ✅ No change needed |
+
+---
+
+## Firestore Rules Audit — SOCAA-511 Like/Unlike Posts
+
+**Audit date:** 2026-05-26
+**Classification:** Safe — additive only. New `likes` collection + new `likeCount` field on `posts`. No existing data migration required.
+
+### Collections Affected
+
+| Collection | Change | Notes |
+|---|---|---|
+| `posts` | Added `likeCount` field (number, default 0) | Cached like count; updated atomically via `FieldValue.increment` |
+| `likes` | New collection | Composite key `{userId}_{postId}` ensures uniqueness and O(1) lookup |
+
+### Rules Coverage
+
+| Operation | Collection | Document | Who | Rule Added |
+|---|---|---|---|---|
+| Write (like) | `likes` | `{userId}_{postId}` | Authenticated user (self) | `allow create` when `data.userId == request.auth.uid` ✅ |
+| Delete (unlike) | `likes` | `{userId}_{postId}` | Authenticated user (self) | `allow delete` when `data.userId == request.auth.uid` ✅ |
+| Read (check if liked) | `likes` | `{userId}_{postId}` | Any authenticated user | `allow read: if request.auth != null` ✅ |
+| Update `likeCount` | `posts` | `{postId}` | Any authenticated user | `allow update` when `affectedKeys().hasOnly(['likeCount'])` ✅ |
+| Read `likeCount` in feed | `posts` | `{postId}` | Any authenticated user | Existing `allow read: if request.auth != null` ✅ |
+
+### Composite Index Determination
+
+All like lookups are single-document reads using the composite key `{userId}_{postId}`. No compound queries, no `.orderBy()` — **no composite index required**.
+
+**No entry added to `firestore.indexes.json`.**
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — `likes` collection added; `likeCount` field added to `posts` | ✅ Done |
+| `firestore.rules` — `likes` collection rules + `posts` `likeCount` update rule added | ✅ Done |
+| `firestore.indexes.json` — no composite index required; confirmed no changes needed | ✅ Confirmed |

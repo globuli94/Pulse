@@ -42,4 +42,8 @@ abstract class PostsRemoteDataSource {
 
   /// Fetches up to 20 posts by [uid], ordered by createdAt descending.
   Future<List<Map<String, dynamic>>> getPostsByUser(String uid);
+
+  Future<void> likePost({required String postId, required String userId});
+  Future<void> unlikePost({required String postId, required String userId});
+  Future<bool> isLiked({required String postId, required String userId});
 }

@@ -7,6 +7,8 @@ import 'package:pulse/features/auth/domain/entities/app_user.dart';
 import 'package:pulse/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pulse/features/feed/presentation/screens/feed_screen.dart';
 import 'package:pulse/features/posts/domain/entities/post.dart';
+import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
+import 'package:pulse/features/posts/presentation/bloc/like_event.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/posts/presentation/widgets/post_card.dart';
 
@@ -15,20 +17,32 @@ class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState>
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
+class MockPostsRepository extends Mock implements PostsRepository {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const PostsFeedSubscriptionRequested());
     registerFallbackValue(const PostsFeedNextPageRequested());
     registerFallbackValue(const PostsDeleteRequested(postId: '', userId: ''));
+    registerFallbackValue(LikeInitialised(postId: '', userId: '', initialLikeCount: 0));
+    registerFallbackValue(LikeToggleRequested(postId: '', userId: ''));
   });
 
   group('FeedScreen', () {
     late MockPostsFeedBloc mockPostsFeedBloc;
     late MockAuthBloc mockAuthBloc;
+    late MockPostsRepository mockPostsRepository;
 
     setUp(() {
       mockPostsFeedBloc = MockPostsFeedBloc();
       mockAuthBloc = MockAuthBloc();
+      mockPostsRepository = MockPostsRepository();
+
+      // Stub isLiked to prevent async errors in PostCard initialisation
+      when(() => mockPostsRepository.isLiked(
+            postId: any(named: 'postId'),
+            userId: any(named: 'userId'),
+          )).thenAnswer((_) async => false);
 
       // Mock authenticated user
       final testUser = AppUser(
@@ -84,12 +98,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -175,12 +192,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -208,12 +228,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -244,12 +267,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadingMoreState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -279,12 +305,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(noMoreState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -318,12 +347,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -351,12 +383,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -385,12 +420,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 
@@ -416,12 +454,15 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-            ],
-            child: const MaterialApp(home: FeedScreen()),
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
           ),
         );
 

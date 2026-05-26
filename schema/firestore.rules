@@ -63,6 +63,28 @@ service cloud.firestore {
       // Only author may delete their own post
       allow delete: if request.auth != null
                     && request.auth.uid == resource.data.userId;
+
+      // Any authenticated user may update likeCount (FieldValue.increment for like/unlike)
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['likeCount']);
+    }
+
+    // ---------------------------------------------------------------
+    // likes/{likeId}  — likeId = "{userId}_{postId}"
+    // ---------------------------------------------------------------
+    match /likes/{likeId} {
+
+      // Any authenticated user may read a like document (e.g. check if current user liked a post)
+      allow read: if request.auth != null;
+
+      // Owner may create their own like — userId in the document must match the authenticated user
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Owner may delete their own like
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
     }
 
   }
