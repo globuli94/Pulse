@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:pulse/features/auth/domain/entities/app_user.dart';
 import 'package:pulse/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:pulse/features/chat/domain/repositories/chat_repository.dart';
+import 'package:pulse/features/chat/presentation/bloc/unread_count_cubit.dart';
 import 'package:pulse/features/home/presentation/screens/shell_screen.dart';
 import 'package:pulse/features/feed/presentation/screens/feed_screen.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
@@ -17,6 +19,8 @@ class MockAuthBloc extends Mock implements AuthBloc {}
 class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
 class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState> implements PostsFeedBloc {}
 class MockProfilePostsBloc extends MockBloc<ProfilePostsEvent, ProfilePostsState> implements ProfilePostsBloc {}
+class MockChatRepository extends Mock implements ChatRepository {}
+class MockUnreadCountCubit extends MockCubit<int> implements UnreadCountCubit {}
 
 void main() {
   group('Navigation Shell - Flow Tests', () {
@@ -24,12 +28,21 @@ void main() {
     late MockProfileBloc mockProfileBloc;
     late MockPostsFeedBloc mockPostsFeedBloc;
     late MockProfilePostsBloc mockProfilePostsBloc;
+    late MockChatRepository mockChatRepository;
+    late MockUnreadCountCubit mockUnreadCountCubit;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
       mockProfileBloc = MockProfileBloc();
       mockPostsFeedBloc = MockPostsFeedBloc();
       mockProfilePostsBloc = MockProfilePostsBloc();
+      mockChatRepository = MockChatRepository();
+      mockUnreadCountCubit = MockUnreadCountCubit();
+      when(() => mockChatRepository.watchConversations(any()))
+          .thenAnswer((_) => const Stream.empty());
+      when(() => mockUnreadCountCubit.state).thenReturn(0);
+      when(() => mockUnreadCountCubit.stream)
+          .thenAnswer((_) => const Stream.empty());
       final testUser = AppUser(
         uid: 'test-uid',
         email: 'test@example.com',
@@ -73,15 +86,19 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-              BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
-            ],
-            child: MaterialApp.router(
-              routerConfig: router,
+          RepositoryProvider<ChatRepository>(
+            create: (_) => mockChatRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+                BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
+                BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+              ),
             ),
           ),
         );
@@ -114,15 +131,19 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-              BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
-            ],
-            child: MaterialApp.router(
-              routerConfig: router,
+          RepositoryProvider<ChatRepository>(
+            create: (_) => mockChatRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+                BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
+                BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+              ),
             ),
           ),
         );
@@ -153,15 +174,19 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
-              BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
-              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
-              BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
-            ],
-            child: MaterialApp.router(
-              routerConfig: router,
+          RepositoryProvider<ChatRepository>(
+            create: (_) => mockChatRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+                BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
+                BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+              ),
             ),
           ),
         );

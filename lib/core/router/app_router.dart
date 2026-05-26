@@ -14,6 +14,9 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/chat/domain/repositories/chat_repository.dart';
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
+import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/follows/domain/repositories/follows_repository.dart';
 import '../../features/follows/presentation/bloc/follow_bloc.dart';
 import '../../features/home/presentation/screens/shell_screen.dart';
@@ -152,6 +155,28 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
               followsRepository: context.read<FollowsRepository>(),
             )..add(FollowingLoadRequested(uid: uid)),
             child: FollowingScreen(viewedUid: uid),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/chat/:conversationId',
+        builder: (context, state) {
+          final conversationId = state.pathParameters['conversationId']!;
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final currentUserId = extra['currentUserId'] as String? ?? '';
+          final otherUserId = extra['otherUserId'] as String? ?? '';
+          final otherUserDisplayName =
+              extra['otherUserDisplayName'] as String? ?? '';
+          return BlocProvider<ChatBloc>(
+            create: (_) => ChatBloc(
+              repository: context.read<ChatRepository>(),
+            ),
+            child: ChatScreen(
+              conversationId: conversationId,
+              currentUserId: currentUserId,
+              otherUserId: otherUserId,
+              otherUserDisplayName: otherUserDisplayName,
+            ),
           );
         },
       ),
