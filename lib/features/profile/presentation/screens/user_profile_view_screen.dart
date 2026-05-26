@@ -4,7 +4,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../chat/domain/repositories/chat_repository.dart';
 import '../../../follows/presentation/bloc/follow_bloc.dart';
 import '../bloc/user_profile_bloc.dart';
 import '../widgets/profile_avatar.dart';
@@ -144,6 +146,31 @@ class UserProfileViewScreen extends StatelessWidget {
                               child: const Text('Retry'),
                             );
                           },
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final chatRepository =
+                                context.read<ChatRepository>();
+                            final conversationId =
+                                await chatRepository.getOrCreateConversation(
+                              currentUserId: currentUserId,
+                              otherUserId: viewedUid,
+                            );
+                            if (context.mounted) {
+                              context.push(
+                                '/chat/$conversationId',
+                                extra: {
+                                  'currentUserId': currentUserId,
+                                  'otherUserId': viewedUid,
+                                  'otherUserDisplayName':
+                                      profile.displayName,
+                                },
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.chat_outlined),
+                          label: const Text('Message'),
                         ),
                       ],
                     ],

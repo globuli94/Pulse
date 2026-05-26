@@ -16,6 +16,10 @@ import 'features/auth/data/datasources/auth_firebase_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/chat/data/datasources/chat_firebase_data_source.dart';
+import 'features/chat/data/repositories/chat_repository_impl.dart';
+import 'features/chat/domain/repositories/chat_repository.dart';
+import 'features/chat/presentation/bloc/unread_count_cubit.dart';
 import 'features/follows/data/datasources/follows_firebase_data_source.dart';
 import 'features/follows/data/repositories/follows_repository_impl.dart';
 import 'features/follows/domain/repositories/follows_repository.dart';
@@ -111,6 +115,13 @@ class PulseApp extends StatelessWidget {
             ),
           ),
         ),
+        RepositoryProvider<ChatRepository>(
+          create: (context) => ChatRepositoryImpl(
+            dataSource: ChatFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+            ),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -137,6 +148,17 @@ class PulseApp extends StatelessWidget {
             create: (context) => ProfilePostsBloc(
               postsRepository: context.read<PostsRepository>(),
             ),
+          ),
+          BlocProvider<UnreadCountCubit>(
+            create: (context) {
+              final authState = context.read<AuthBloc>().state;
+              final currentUserId =
+                  authState is Authenticated ? authState.user.uid : '';
+              return UnreadCountCubit(
+                repository: context.read<ChatRepository>(),
+                currentUserId: currentUserId,
+              )..watchUnreadCount();
+            },
           ),
         ],
         child: MaterialApp.router(
