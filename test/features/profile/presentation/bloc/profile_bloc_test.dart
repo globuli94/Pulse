@@ -239,6 +239,8 @@ void main() {
         build: () {
           when(() => mockProfileRepository.deleteAccount())
               .thenAnswer((_) async => {});
+          when(() => mockAuthRepository.signOut())
+              .thenAnswer((_) async => {});
           return profileBloc;
         },
         seed: () => ProfileLoaded(profile: testProfile),
