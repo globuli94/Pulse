@@ -11,21 +11,25 @@ import 'package:pulse/features/feed/presentation/screens/feed_screen.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/profile/presentation/screens/profile_screen.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:pulse/features/profile/presentation/bloc/profile_posts_bloc.dart';
 
 class MockAuthBloc extends Mock implements AuthBloc {}
 class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
 class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState> implements PostsFeedBloc {}
+class MockProfilePostsBloc extends MockBloc<ProfilePostsEvent, ProfilePostsState> implements ProfilePostsBloc {}
 
 void main() {
   group('Navigation Shell - Flow Tests', () {
     late MockAuthBloc mockAuthBloc;
     late MockProfileBloc mockProfileBloc;
     late MockPostsFeedBloc mockPostsFeedBloc;
+    late MockProfilePostsBloc mockProfilePostsBloc;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
       mockProfileBloc = MockProfileBloc();
       mockPostsFeedBloc = MockPostsFeedBloc();
+      mockProfilePostsBloc = MockProfilePostsBloc();
       final testUser = AppUser(
         uid: 'test-uid',
         email: 'test@example.com',
@@ -46,6 +50,9 @@ void main() {
       // Mock posts feed state
       when(() => mockPostsFeedBloc.state).thenReturn(const PostsFeedLoading());
       when(() => mockPostsFeedBloc.stream).thenAnswer((_) => const Stream.empty());
+      // Mock profile posts state
+      when(() => mockProfilePostsBloc.state).thenReturn(const ProfilePostsInitial());
+      when(() => mockProfilePostsBloc.stream).thenAnswer((_) => const Stream.empty());
     });
 
     testWidgets(
@@ -71,6 +78,7 @@ void main() {
               BlocProvider<AuthBloc>.value(value: mockAuthBloc),
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
               BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
             ],
             child: MaterialApp.router(
               routerConfig: router,
@@ -111,6 +119,7 @@ void main() {
               BlocProvider<AuthBloc>.value(value: mockAuthBloc),
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
               BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
             ],
             child: MaterialApp.router(
               routerConfig: router,
@@ -149,6 +158,7 @@ void main() {
               BlocProvider<AuthBloc>.value(value: mockAuthBloc),
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
               BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
             ],
             child: MaterialApp.router(
               routerConfig: router,
