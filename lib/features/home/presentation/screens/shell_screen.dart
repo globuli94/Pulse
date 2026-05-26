@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../core/navigation/shell_tab_controller.dart';
 import '../../../chat/presentation/bloc/unread_count_cubit.dart';
 import '../../../chat/presentation/screens/conversations_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
@@ -36,8 +37,28 @@ class ShellScreen extends StatefulWidget {
 
 class _ShellScreenState extends State<ShellScreen> {
   int _currentIndex = 0;
+  late ShellTabController _tabController;
 
   static const _tabTitles = ['Feed', 'Search', 'Messages', 'Profile'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = context.read<ShellTabController>();
+    _tabController.addListener(_onTabControllerChanged);
+  }
+
+  void _onTabControllerChanged() {
+    if (mounted && _tabController.value != _currentIndex) {
+      setState(() => _currentIndex = _tabController.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabControllerChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
