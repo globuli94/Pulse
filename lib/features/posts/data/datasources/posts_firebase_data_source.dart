@@ -132,6 +132,15 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
     required String userId,
   }) async {
     final likeId = '${userId}_$postId';
+
+    // Read post and actor docs to build the notification.
+    final postDoc = await _firestore.collection('posts').doc(postId).get();
+    final postOwnerUid = postDoc.data()?['userId'] as String?;
+    final actorDoc = await _firestore.collection('users').doc(userId).get();
+    final actorData = actorDoc.data() ?? {};
+    final actorDisplayName = actorData['displayName'] as String? ?? '';
+    final actorPhotoUrl = actorData['photoUrl'] as String?;
+
     final batch = _firestore.batch();
     batch.set(
       _firestore.collection('likes').doc(likeId),
@@ -145,6 +154,24 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
       _firestore.collection('posts').doc(postId),
       {'likeCount': FieldValue.increment(1)},
     );
+
+    // Write a like notification for the post owner (skip self-likes).
+    if (postOwnerUid != null && postOwnerUid != userId) {
+      final notifRef = _firestore.collection('notifications').doc();
+      final notifData = <String, dynamic>{
+        'id': notifRef.id,
+        'userId': postOwnerUid,
+        'type': 'like',
+        'actorId': userId,
+        'actorDisplayName': actorDisplayName,
+        'postId': postId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+      if (actorPhotoUrl != null) notifData['actorPhotoUrl'] = actorPhotoUrl;
+      batch.set(notifRef, notifData);
+    }
+
     await batch.commit();
   }
 

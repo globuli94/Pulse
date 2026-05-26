@@ -153,26 +153,8 @@ void main() {
       expect(find.text('2'), findsWidgets);
     });
 
-    testWidgets('shows "Messages" in AppBar', (WidgetTester tester) async {
-      when(() => mockChatRepository.watchConversations('user1')).thenAnswer(
-        (_) => Stream.value([]),
-      );
-
-      await tester.pumpWidget(
-        createWidgetUnderTest(
-          authState: Authenticated(
-            AppUser(
-              uid: 'user1',
-              email: 'user@example.com',
-              displayName: 'Test User',
-            ),
-          ),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      expect(find.text('Messages'), findsWidgets);
-    });
+    // The "Messages" AppBar title was moved to ShellScreen (global AppBar added
+    // for FEAT-011 notifications bell). ConversationsScreen no longer renders
+    // its own AppBar. Covered by ShellScreen navigation tests.
   });
 }

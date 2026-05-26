@@ -59,7 +59,6 @@ class _SearchScreenBodyState extends State<_SearchScreenBody> {
         authState is Authenticated ? authState.user.uid : '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
       body: Column(
         children: [
           Padding(

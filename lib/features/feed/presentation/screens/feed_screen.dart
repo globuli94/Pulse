@@ -61,7 +61,6 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Feed')),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/create-post'),
         child: const Icon(Icons.add),

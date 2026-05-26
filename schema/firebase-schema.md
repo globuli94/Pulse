@@ -136,6 +136,42 @@ All lookups are single-document reads using the composite key `{userId}_{postId}
 
 ---
 
+### `notifications` — path: `notifications/{notificationId}`
+
+**Purpose:** Stores in-app notifications delivered to users when another user likes their post or follows them. Document ID is a server-generated unique ID.
+
+**Owner:** `userId` field (Firebase Auth UID of the recipient)
+
+| Field | Firestore Type | Required | Description |
+|---|---|---|---|
+| `id` | string | required | Equals the document ID; stored redundantly for client convenience |
+| `userId` | string | required | Firebase Auth UID of the recipient (post owner or followed user) |
+| `type` | string | required | Event type: `'like'` or `'follow'` |
+| `actorId` | string | required | Firebase Auth UID of the user who triggered the event |
+| `actorDisplayName` | string | required | Display name of the actor captured at event time |
+| `actorPhotoUrl` | string | optional | Avatar URL of the actor at event time; null if no avatar |
+| `postId` | string | optional | ID of the liked post; only present when `type == 'like'`; null for follow notifications |
+| `isRead` | boolean | required | `false` on creation; set to `true` by the recipient when they view the notification |
+| `createdAt` | timestamp | required | Server timestamp set on creation |
+
+**Access Patterns:**
+
+| Who | Operation | Condition |
+|---|---|---|
+| Any authenticated user (actor) | Create notification for another user | `request.auth != null` |
+| Recipient | Read own notifications | `request.auth.uid == resource.data.userId` |
+| Recipient | Update `isRead` only | `request.auth.uid == resource.data.userId` and only `isRead` field changes |
+| Anyone | Delete notification | Denied — no delete rule |
+
+**Query Patterns:**
+
+| Collection | `.where()` | `.orderBy()` | Index Required | Purpose |
+|---|---|---|---|---|
+| `notifications` | `userId == currentUser.uid` | `createdAt DESC` | **Yes** (composite: `userId ASC`, `createdAt DESC`) | Fetch all notifications for the current user, newest first |
+| `notifications` | `userId == currentUser.uid`, `isRead == false` | — | **Yes** (composite: `userId ASC`, `isRead ASC`) | Count or fetch unread notifications for badge |
+
+---
+
 ### `conversations` — path: `conversations/{conversationId}`
 
 **Purpose:** Stores one document per direct-message conversation between two users. Document ID is a server-generated unique ID.
@@ -214,6 +250,8 @@ All lookups are single-document reads using the composite key `{userId}_{postId}
 | `posts` | `userId ASC`, `createdAt DESC` | User-specific post list (feed + profile grid) |
 | `follows` | `followerId ASC`, `createdAt ASC` | Fetch list of followed UIDs for feed construction |
 | `conversations` | `participantIds ARRAY_CONTAINS`, `lastMessageAt DESC` | Conversation list for a given user, most recent first |
+| `notifications` | `userId ASC`, `createdAt DESC` | All notifications for a user, newest first |
+| `notifications` | `userId ASC`, `isRead ASC` | Unread notifications count / badge query |
 | `users` | — | No composite index needed for displayName prefix query (range filter and orderBy on same field; single-field index sufficient) |
 
 **Note:** The profile posts query `.where('userId', '==', uid).orderBy('createdAt', 'desc')` uses the `posts (userId ASC, createdAt DESC)` index above. The followers/following queries (`.where('followedId', '==', uid)` and `.where('followerId', '==', uid)` without `orderBy` on a second field) require no composite index.
@@ -395,3 +433,38 @@ All like lookups are single-document reads using the composite key `{userId}_{po
 | `firebase-schema.md` — `likes` collection added; `likeCount` field added to `posts` | ✅ Done |
 | `firestore.rules` — `likes` collection rules + `posts` `likeCount` update rule added | ✅ Done |
 | `firestore.indexes.json` — no composite index required; confirmed no changes needed | ✅ Confirmed |
+
+---
+
+## Firestore Rules Audit — SOCAA-521 Notifications (FEAT-011)
+
+**Audit date:** 2026-05-26
+**Classification:** Safe — additive only. New `notifications` collection. No existing collection fields renamed or removed.
+
+### Collections Affected
+
+| Collection | Change | Notes |
+|---|---|---|
+| `notifications` | New collection | One document per in-app notification; recipient-scoped reads and updates |
+
+### Rules Coverage
+
+| Operation | Collection | Who | Rule Added |
+|---|---|---|---|
+| Create notification | `notifications` | Any authenticated user (actor) | `allow create` when `request.auth != null` ✅ |
+| Read notifications | `notifications` | Recipient only | `allow read` when `request.auth.uid == resource.data.userId` ✅ |
+| Update `isRead` | `notifications` | Recipient only | `allow update` when `request.auth.uid == resource.data.userId` and `affectedKeys().hasOnly(['isRead'])` ✅ |
+| Delete notification | `notifications` | — | Denied — no `allow delete` rule ✅ |
+
+### Composite Indexes
+
+| Collection | Fields | Required | Reason |
+|---|---|---|---|
+| `notifications` | `userId ASC`, `createdAt DESC` | **Yes** | Equality filter on `userId` combined with `orderBy createdAt DESC` requires composite index |
+| `notifications` | `userId ASC`, `isRead ASC` | **Yes** | Two-field equality/filter query (userId + isRead) requires composite index |
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — `notifications` collection added; composite indexes table updated | ✅ Done |
+| `firestore.rules` — `notifications` create/read/update-isRead rules added; delete denied | ✅ Done |
+| `firestore.indexes.json` — two composite indexes added (`userId+createdAt`, `userId+isRead`) | ✅ Done |

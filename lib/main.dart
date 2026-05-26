@@ -20,6 +20,10 @@ import 'features/chat/data/datasources/chat_firebase_data_source.dart';
 import 'features/chat/data/repositories/chat_repository_impl.dart';
 import 'features/chat/domain/repositories/chat_repository.dart';
 import 'features/chat/presentation/bloc/unread_count_cubit.dart';
+import 'features/notifications/data/datasources/notifications_firebase_data_source.dart';
+import 'features/notifications/data/repositories/notifications_repository_impl.dart';
+import 'features/notifications/domain/repositories/notifications_repository.dart';
+import 'features/notifications/presentation/bloc/unread_notifications_count_cubit.dart';
 import 'features/follows/data/datasources/follows_firebase_data_source.dart';
 import 'features/follows/data/repositories/follows_repository_impl.dart';
 import 'features/follows/domain/repositories/follows_repository.dart';
@@ -122,6 +126,13 @@ class PulseApp extends StatelessWidget {
             ),
           ),
         ),
+        RepositoryProvider<NotificationsRepository>(
+          create: (context) => NotificationsRepositoryImpl(
+            dataSource: NotificationsFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+            ),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -157,6 +168,17 @@ class PulseApp extends StatelessWidget {
               return UnreadCountCubit(
                 repository: context.read<ChatRepository>(),
                 currentUserId: currentUserId,
+              )..watchUnreadCount();
+            },
+          ),
+          BlocProvider<UnreadNotificationsCountCubit>(
+            create: (context) {
+              final authState = context.read<AuthBloc>().state;
+              final currentUserId =
+                  authState is Authenticated ? authState.user.uid : '';
+              return UnreadNotificationsCountCubit(
+                repository: context.read<NotificationsRepository>(),
+                userId: currentUserId,
               )..watchUnreadCount();
             },
           ),
