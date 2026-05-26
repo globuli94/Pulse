@@ -73,7 +73,7 @@
 | Query | Index Required |
 |---|---|
 | No filter, order by `createdAt DESC` — global feed | No (single-field) |
-| Filter `userId == X`, order by `createdAt DESC` — user post list | **Yes** (composite) |
+| Filter `userId == X`, order by `createdAt DESC` — user post list / profile grid | **Yes** (composite: `userId ASC`, `createdAt DESC`) |
 
 ---
 
@@ -99,10 +99,12 @@
 
 **Query Patterns:**
 
-| Query | Where | OrderBy | Purpose |
-|---|---|---|---|
-| Get followed users | `followerId == currentUid` | `createdAt ASC` | Fetch followeeId list for feed construction |
-| Check if following | doc ID `{currentUid}_{targetUid}` | N/A | O(1) existence check |
+| Query | Where | OrderBy | Index Required | Purpose |
+|---|---|---|---|---|
+| Get followed users | `followerId == currentUid` | `createdAt ASC` | Yes (composite, existing) | Fetch followeeId list for feed construction |
+| Get followers list | `followedId == uid` | — | No | Resolve follower list for profile screen |
+| Get following list | `followerId == uid` | — | No | Resolve following list for profile screen |
+| Check if following | doc ID `{currentUid}_{targetUid}` | N/A | No | O(1) existence check |
 
 ---
 
@@ -125,9 +127,11 @@
 
 | Collection | Fields | Notes |
 |---|---|---|
-| `posts` | `userId ASC`, `createdAt DESC` | User-specific post list query |
+| `posts` | `userId ASC`, `createdAt DESC` | User-specific post list (feed + profile grid) |
 | `follows` | `followerId ASC`, `createdAt ASC` | Fetch list of followed UIDs for feed construction |
 | `users` | — | No composite index needed for displayName prefix query (range filter and orderBy on same field; single-field index sufficient) |
+
+**Note:** The profile posts query `.where('userId', '==', uid).orderBy('createdAt', 'desc')` uses the `posts (userId ASC, createdAt DESC)` index above. The followers/following queries (`.where('followedId', '==', uid)` and `.where('followerId', '==', uid)` without `orderBy` on a second field) require no composite index.
 
 See `firestore.indexes.json` for the machine-readable definition.
 
@@ -200,3 +204,37 @@ Firestore requires a composite index only when a range filter is combined with a
 | `firebase-schema.md` — displayName prefix query pattern row added to `users` section | ✅ Done |
 | `firestore.indexes.json` — composite index not required; confirmed and documented | ✅ Done |
 | `firestore.rules` — collection-level query confirmed covered by existing `allow read` rule | ✅ No change needed |
+
+---
+
+## Firestore Rules Audit — SOCAA-507 Profile Expansion
+
+**Audit date:** 2026-05-26
+**Classification:** Safe — additive documentation only; no field renames, removals, or new collections.
+
+### Field Name Clarification
+
+The SOCAA-507 ticket references `authorId` as the posts field. The actual Firestore field name is `userId` (see `posts` schema above and the existing composite index). The Flutter profile posts query must use `.where('userId', '==', uid)` to match the existing index.
+
+### Composite Index Determination
+
+The profile posts query is `.where('userId', '==', uid).orderBy('createdAt', 'desc')`. A composite index on (`userId ASC`, `createdAt DESC`) is required because equality filter and `orderBy` target different fields.
+
+**This index already exists in `firestore.indexes.json`** (added for FEAT-006 feed). No new entry is needed.
+
+### Rules Coverage
+
+| Access Pattern | Collection | Rule in Effect |
+|---|---|---|
+| Read any user's posts (profile grid) | `posts` | `allow read: if request.auth != null` ✅ |
+| Read followers (`followedId == uid`) | `follows` | `allow read: if request.auth != null` ✅ |
+| Read following (`followerId == uid`) | `follows` | `allow read: if request.auth != null` ✅ |
+| Read any user profile (display name + avatar) | `users` | `allow read: if request.auth != null` ✅ |
+
+All four access patterns are fully covered by existing rules. **No changes to `schema/firestore.rules` are required.**
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — profile posts query pattern documented; follows query patterns expanded | ✅ Done |
+| `firestore.indexes.json` — composite index (`userId ASC`, `createdAt DESC`) already present; no new entry needed | ✅ Confirmed |
+| `firestore.rules` — all four access patterns covered by existing `allow read` rules | ✅ No change needed |

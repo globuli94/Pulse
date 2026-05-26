@@ -7,13 +7,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../posts/presentation/widgets/post_card.dart';
+import '../../domain/entities/user_profile.dart';
 import '../bloc/profile_bloc.dart';
+import '../bloc/profile_posts_bloc.dart';
 import '../widgets/profile_avatar.dart';
 
-/// Displays the authenticated user's own profile.
+/// Displays the authenticated user's own profile, including their posts.
 ///
-/// Reads from the global [ProfileBloc]. On build it dispatches
-/// [ProfileLoadRequested] with the authenticated user's UID.
+/// Reads from the global [ProfileBloc] and [ProfilePostsBloc]. On build it
+/// dispatches [ProfileLoadRequested] and [ProfilePostsLoadRequested] with the
+/// authenticated user's UID.
 class ProfileScreen extends StatefulWidget {
   /// Creates a [ProfileScreen].
   const ProfileScreen({super.key});
@@ -34,6 +38,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (_loadedUid != uid) {
         _loadedUid = uid;
         context.read<ProfileBloc>().add(ProfileLoadRequested(uid: uid));
+        context
+            .read<ProfilePostsBloc>()
+            .add(ProfilePostsLoadRequested(uid: uid));
       }
     }
   }
@@ -103,64 +110,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           return Scaffold(
             body: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ProfileAvatar(avatarUrl: profile.avatarUrl, radius: 80),
-                      const SizedBox(height: 16),
-                      Text(
-                        profile.displayName,
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        profile.bio.isNotEmpty ? profile.bio : 'No bio yet.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${profile.postCount} posts',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${profile.followerCount} followers · '
-                        '${profile.followingCount} following',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 24),
-                      TextButton(
-                        onPressed: () => context.push('/edit-profile'),
-                        child: const Text('Edit Profile'),
-                      ),
-                      TextButton(
-                        onPressed: () => context
-                            .read<ProfileBloc>()
-                            .add(const ProfileSignOutRequested()),
-                        child: const Text('Logout'),
-                      ),
-                      TextButton(
-                        onPressed: () => _confirmDeleteAccount(context),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                        child: const Text('Delete Account'),
-                      ),
-                    ],
-                  ),
-                ),
+              child: _ProfileScreenBody(
+                profile: profile,
+                onEditProfile: () => context.push('/edit-profile'),
+                onSignOut: () => context
+                    .read<ProfileBloc>()
+                    .add(const ProfileSignOutRequested()),
+                onDeleteAccount: () => _confirmDeleteAccount(context),
               ),
             ),
           );
         },
       ),
+    );
+  }
+}
+
+class _ProfileScreenBody extends StatelessWidget {
+  const _ProfileScreenBody({
+    required this.profile,
+    required this.onEditProfile,
+    required this.onSignOut,
+    required this.onDeleteAccount,
+  });
+
+  final UserProfile profile;
+  final VoidCallback onEditProfile;
+  final VoidCallback onSignOut;
+  final VoidCallback onDeleteAccount;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ProfilePostsBloc, ProfilePostsState>(
+      builder: (context, postsState) {
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    ProfileAvatar(avatarUrl: profile.avatarUrl, radius: 80),
+                    const SizedBox(height: 16),
+                    Text(
+                      profile.displayName,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      profile.bio.isNotEmpty ? profile.bio : 'No bio yet.',
+                      style:
+                          Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey,
+                              ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${profile.postCount} posts',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () =>
+                              context.push('/followers/${profile.uid}'),
+                          child: Text(
+                            '${profile.followerCount} followers',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  decoration: TextDecoration.underline,
+                                ),
+                          ),
+                        ),
+                        Text(
+                          ' · ',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        GestureDetector(
+                          onTap: () =>
+                              context.push('/following/${profile.uid}'),
+                          child: Text(
+                            '${profile.followingCount} following',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  decoration: TextDecoration.underline,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    TextButton(
+                      onPressed: onEditProfile,
+                      child: const Text('Edit Profile'),
+                    ),
+                    TextButton(
+                      onPressed: onSignOut,
+                      child: const Text('Sign Out'),
+                    ),
+                    TextButton(
+                      onPressed: onDeleteAccount,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                      child: const Text('Delete Account'),
+                    ),
+                    const Divider(height: 32),
+                  ],
+                ),
+              ),
+            ),
+            if (postsState is ProfilePostsLoading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else if (postsState is ProfilePostsError)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(child: Text(postsState.message)),
+                ),
+              )
+            else if (postsState is ProfilePostsLoaded) ...[
+              if (postsState.posts.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: Text('No posts yet.')),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) =>
+                        PostCard(post: postsState.posts[index]),
+                    childCount: postsState.posts.length,
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

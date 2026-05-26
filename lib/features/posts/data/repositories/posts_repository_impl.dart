@@ -65,6 +65,12 @@ class PostsRepositoryImpl implements PostsRepository {
     return _dataSource.deletePost(postId: postId, userId: userId);
   }
 
+  @override
+  Future<List<Post>> getPostsByUser(String uid) async {
+    final maps = await _dataSource.getPostsByUser(uid);
+    return maps.map(_mapToPost).toList();
+  }
+
   Post _mapToPost(Map<String, dynamic> map) {
     final createdAt = map['createdAt'];
     final DateTime dateTime;

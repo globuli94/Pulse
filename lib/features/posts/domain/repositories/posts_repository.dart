@@ -44,4 +44,9 @@ abstract class PostsRepository {
   ///
   /// If the post has an associated image it is also removed from Storage.
   Future<void> deletePost({required String postId, required String userId});
+
+  /// Fetches up to 20 posts authored by [uid], newest first.
+  ///
+  /// Requires a Firestore composite index on `posts(userId ASC, createdAt DESC)`.
+  Future<List<Post>> getPostsByUser(String uid);
 }

@@ -103,4 +103,44 @@ class FollowsFirebaseDataSource implements FollowsRemoteDataSource {
         .map((d) => d.data()['followeeId'] as String)
         .toList();
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> getFollowers(String uid) async {
+    final followsSnapshot = await _firestore
+        .collection('follows')
+        .where('followeeId', isEqualTo: uid)
+        .get();
+    final followerIds = followsSnapshot.docs
+        .map((d) => d.data()['followerId'] as String)
+        .toList();
+    if (followerIds.isEmpty) return [];
+    final userFutures = followerIds.map(
+      (id) => _firestore.collection('users').doc(id).get(),
+    );
+    final userDocs = await Future.wait(userFutures);
+    return userDocs
+        .where((doc) => doc.exists && doc.data() != null)
+        .map((doc) => <String, dynamic>{'uid': doc.id, ...doc.data()!})
+        .toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getFollowing(String uid) async {
+    final followsSnapshot = await _firestore
+        .collection('follows')
+        .where('followerId', isEqualTo: uid)
+        .get();
+    final followeeIds = followsSnapshot.docs
+        .map((d) => d.data()['followeeId'] as String)
+        .toList();
+    if (followeeIds.isEmpty) return [];
+    final userFutures = followeeIds.map(
+      (id) => _firestore.collection('users').doc(id).get(),
+    );
+    final userDocs = await Future.wait(userFutures);
+    return userDocs
+        .where((doc) => doc.exists && doc.data() != null)
+        .map((doc) => <String, dynamic>{'uid': doc.id, ...doc.data()!})
+        .toList();
+  }
 }
