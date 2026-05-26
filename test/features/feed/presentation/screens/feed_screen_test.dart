@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pulse/features/auth/domain/entities/app_user.dart';
 import 'package:pulse/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pulse/features/feed/presentation/screens/feed_screen.dart';
+import 'package:pulse/features/home/presentation/bloc/shell_tab_cubit.dart';
 import 'package:pulse/features/posts/domain/entities/post.dart';
 import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/posts/presentation/bloc/like_event.dart';
@@ -468,6 +469,66 @@ void main() {
 
         // Verify PostCard is rendered (delete action is handled within PostCard)
         expect(find.byType(PostCard), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'tapping own post author row switches to Profile tab via ShellTabCubit',
+      (WidgetTester tester) async {
+        final ownUserId = 'test-uid';
+        final ownPost = Post(
+          id: 'post-own',
+          userId: ownUserId,
+          displayName: 'Test User',
+          text: 'My own post',
+          imageUrl: null,
+          createdAt: DateTime.now(),
+        );
+        final loadedState = PostsFeedLoaded(posts: [ownPost]);
+        when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
+
+        final shellTabCubit = ShellTabCubit();
+
+        await tester.pumpWidget(
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // Tap the author name
+        await tester.tap(find.text('Test User'));
+        await tester.pump();
+
+        expect(shellTabCubit.state, 3);
+      },
+    );
+
+    testWidgets(
+      'RefreshIndicator is present on empty feed',
+      (WidgetTester tester) async {
+        final emptyState = PostsFeedLoaded(posts: const []);
+        when(() => mockPostsFeedBloc.state).thenReturn(emptyState);
+
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+              BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+            ],
+            child: const MaterialApp(home: FeedScreen()),
+          ),
+        );
+
+        expect(find.byType(RefreshIndicator), findsOneWidget);
       },
     );
   });
