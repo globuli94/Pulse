@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:pulse/features/notifications/domain/entities/notification_item.dart';
 import 'package:pulse/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:pulse/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:pulse/features/notifications/presentation/screens/notifications_screen.dart';
@@ -18,27 +17,6 @@ void main() {
   setUpAll(() {
     registerFallbackValue(FakeNotificationsEvent());
   });
-
-  // Helper function to create test notification
-  NotificationItem _createTestNotification({
-    required String id,
-    required String type,
-    required String actorDisplayName,
-    String? postId,
-    bool isRead = false,
-  }) {
-    return NotificationItem(
-      id: id,
-      userId: 'test-user',
-      type: type,
-      actorId: 'actor-${id}',
-      actorDisplayName: actorDisplayName,
-      actorPhotoUrl: '', // Empty to avoid network image loading in tests
-      postId: postId,
-      isRead: isRead,
-      createdAt: DateTime(2026, 5, 26),
-    );
-  }
 
   group('NotificationsScreen', () {
     late MockNotificationsBloc mockBloc;
