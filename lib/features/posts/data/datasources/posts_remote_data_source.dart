@@ -39,4 +39,7 @@ abstract class PostsRemoteDataSource {
 
   /// Deletes the Firestore document and its associated Storage image (if any).
   Future<void> deletePost({required String postId, required String userId});
+
+  /// Fetches up to 20 posts by [uid], ordered by createdAt descending.
+  Future<List<Map<String, dynamic>>> getPostsByUser(String uid);
 }

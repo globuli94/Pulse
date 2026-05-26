@@ -21,8 +21,12 @@ import '../../features/posts/domain/repositories/posts_repository.dart';
 import '../../features/posts/presentation/bloc/create_post_bloc.dart';
 import '../../features/posts/presentation/screens/create_post_screen.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
+import '../../features/profile/presentation/bloc/followers_bloc.dart';
+import '../../features/profile/presentation/bloc/following_bloc.dart';
 import '../../features/profile/presentation/bloc/user_profile_bloc.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile/presentation/screens/followers_screen.dart';
+import '../../features/profile/presentation/screens/following_screen.dart';
 import '../../features/profile/presentation/screens/user_profile_view_screen.dart';
 import 'go_router_refresh_stream.dart';
 
@@ -124,6 +128,30 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
               viewedUid: uid,
               currentUserId: currentUserId,
             ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/followers/:uid',
+        builder: (context, state) {
+          final uid = state.pathParameters['uid']!;
+          return BlocProvider<FollowersBloc>(
+            create: (_) => FollowersBloc(
+              followsRepository: context.read<FollowsRepository>(),
+            )..add(FollowersLoadRequested(uid: uid)),
+            child: FollowersScreen(viewedUid: uid),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/following/:uid',
+        builder: (context, state) {
+          final uid = state.pathParameters['uid']!;
+          return BlocProvider<FollowingBloc>(
+            create: (_) => FollowingBloc(
+              followsRepository: context.read<FollowsRepository>(),
+            )..add(FollowingLoadRequested(uid: uid)),
+            child: FollowingScreen(viewedUid: uid),
           );
         },
       ),

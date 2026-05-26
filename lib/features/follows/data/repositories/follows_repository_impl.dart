@@ -2,6 +2,7 @@
 //
 // FollowsRepositoryImpl — concrete implementation of FollowsRepository.
 
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../domain/repositories/follows_repository.dart';
 import '../datasources/follows_remote_data_source.dart';
 
@@ -39,4 +40,28 @@ class FollowsRepositoryImpl implements FollowsRepository {
   @override
   Future<List<String>> getFollowedUserIds({required String followerId}) =>
       _dataSource.getFollowedUserIds(followerId: followerId);
+
+  @override
+  Future<List<UserProfile>> getFollowers(String uid) async {
+    final maps = await _dataSource.getFollowers(uid);
+    return maps.map(_mapToUserProfile).toList();
+  }
+
+  @override
+  Future<List<UserProfile>> getFollowing(String uid) async {
+    final maps = await _dataSource.getFollowing(uid);
+    return maps.map(_mapToUserProfile).toList();
+  }
+
+  UserProfile _mapToUserProfile(Map<String, dynamic> data) {
+    return UserProfile(
+      uid: data['uid'] as String? ?? '',
+      displayName: data['displayName'] as String? ?? '',
+      bio: data['bio'] as String? ?? '',
+      avatarUrl: data['avatarUrl'] as String?,
+      postCount: (data['postCount'] as num?)?.toInt() ?? 0,
+      followerCount: (data['followerCount'] as num?)?.toInt() ?? 0,
+      followingCount: (data['followingCount'] as num?)?.toInt() ?? 0,
+    );
+  }
 }

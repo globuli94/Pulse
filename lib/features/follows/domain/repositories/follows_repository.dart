@@ -2,6 +2,8 @@
 //
 // FollowsRepository — abstract interface for follow/unfollow operations.
 
+import '../../../profile/domain/entities/user_profile.dart';
+
 /// Abstract repository interface for all follow relationship operations.
 ///
 /// Zero Firebase imports — implementations live in the data layer.
@@ -42,4 +44,16 @@ abstract class FollowsRepository {
   /// Queries `follows` where `followerId == followerId`, ordered by
   /// `createdAt ASC`. Returns an empty list if the user follows nobody.
   Future<List<String>> getFollowedUserIds({required String followerId});
+
+  /// Returns the list of [UserProfile]s that follow [uid].
+  ///
+  /// Queries `follows` where `followeeId == uid`, then fetches each
+  /// follower's `users/{followerId}` document.
+  Future<List<UserProfile>> getFollowers(String uid);
+
+  /// Returns the list of [UserProfile]s that [uid] follows.
+  ///
+  /// Queries `follows` where `followerId == uid`, then fetches each
+  /// followee's `users/{followeeId}` document.
+  Future<List<UserProfile>> getFollowing(String uid);
 }

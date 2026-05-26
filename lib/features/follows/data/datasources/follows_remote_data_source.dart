@@ -31,4 +31,10 @@ abstract class FollowsRemoteDataSource {
 
   /// Returns the list of UIDs that [followerId] currently follows.
   Future<List<String>> getFollowedUserIds({required String followerId});
+
+  /// Returns raw user maps for all followers of [uid].
+  Future<List<Map<String, dynamic>>> getFollowers(String uid);
+
+  /// Returns raw user maps for all users that [uid] follows.
+  Future<List<Map<String, dynamic>>> getFollowing(String uid);
 }

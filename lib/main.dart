@@ -30,6 +30,7 @@ import 'features/profile/data/datasources/profile_firebase_data_source.dart';
 import 'features/profile/data/repositories/profile_repository_impl.dart';
 import 'features/profile/domain/repositories/profile_repository.dart';
 import 'features/profile/presentation/bloc/profile_bloc.dart';
+import 'features/profile/presentation/bloc/profile_posts_bloc.dart';
 import 'firebase_options.dart';
 
 /// Application entry point.
@@ -131,6 +132,11 @@ class PulseApp extends StatelessWidget {
                 currentUserId: currentUserId,
               )..add(const PostsFeedSubscriptionRequested());
             },
+          ),
+          BlocProvider<ProfilePostsBloc>(
+            create: (context) => ProfilePostsBloc(
+              postsRepository: context.read<PostsRepository>(),
+            ),
           ),
         ],
         child: MaterialApp.router(

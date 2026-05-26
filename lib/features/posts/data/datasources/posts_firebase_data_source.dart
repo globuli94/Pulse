@@ -114,6 +114,19 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> getPostsByUser(String uid) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .where('userId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .get();
+    return snapshot.docs
+        .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+        .toList();
+  }
+
+  @override
   Future<void> deletePost({
     required String postId,
     required String userId,
