@@ -136,6 +136,62 @@ All lookups are single-document reads using the composite key `{userId}_{postId}
 
 ---
 
+### `conversations` — path: `conversations/{conversationId}`
+
+**Purpose:** Stores one document per direct-message conversation between two users. Document ID is a server-generated unique ID.
+
+**Owner:** Both participants (identified by `participantIds` array)
+
+| Field | Firestore Type | Required | Description |
+|---|---|---|---|
+| `participantIds` | array (string) | required | UIDs of the two participants |
+| `lastMessageText` | string | required | Preview text of the most recent message |
+| `lastMessageAt` | timestamp | required | Timestamp of the most recent message; used for ordering the conversation list |
+| `unreadCounts` | map (string → number) | required | Maps each participant UID to their unread message count |
+
+**Access Patterns:**
+
+| Who | Operation | Condition |
+|---|---|---|
+| Participant | Read conversation | `request.auth.uid in resource.data.participantIds` |
+| Authenticated user | Create conversation | `request.auth.uid in request.resource.data.participantIds` |
+| Participant | Update conversation (lastMessage, unreadCounts) | `request.auth.uid in resource.data.participantIds` |
+
+**Query Patterns:**
+
+| Collection | `.where()` | `.orderBy()` | Index Required | Notes |
+|---|---|---|---|---|
+| `conversations` | `participantIds arrayContains userId` | `lastMessageAt DESC` | **Yes** (composite) | Fetch all conversations for a user, most recent first |
+
+---
+
+### `conversations/{conversationId}/messages` — path: `conversations/{conversationId}/messages/{messageId}`
+
+**Purpose:** Stores individual messages within a conversation. Document ID is a server-generated unique ID.
+
+**Owner:** `senderId` field (Firebase Auth UID of the sender)
+
+| Field | Firestore Type | Required | Description |
+|---|---|---|---|
+| `senderId` | string | required | Firebase Auth UID of the message sender |
+| `text` | string | required | Message text content |
+| `createdAt` | timestamp | required | Timestamp when the message was sent; used for ordering messages ASC |
+
+**Access Patterns:**
+
+| Who | Operation | Condition |
+|---|---|---|
+| Participant of parent conversation | Read messages | Caller UID is in parent `conversations/{id}.participantIds` |
+| Participant of parent conversation | Send message | Caller UID is in parent `conversations/{id}.participantIds` and `senderId == request.auth.uid` |
+
+**Query Patterns:**
+
+| Collection | `.where()` | `.orderBy()` | Index Required | Notes |
+|---|---|---|---|---|
+| `conversations/{id}/messages` | — | `createdAt ASC` | **No** (single-field) | Chronological message list within a conversation |
+
+---
+
 ### Firebase Storage — Post Images
 
 **Path:** `posts/{userId}/{postId}/image`
@@ -157,6 +213,7 @@ All lookups are single-document reads using the composite key `{userId}_{postId}
 |---|---|---|
 | `posts` | `userId ASC`, `createdAt DESC` | User-specific post list (feed + profile grid) |
 | `follows` | `followerId ASC`, `createdAt ASC` | Fetch list of followed UIDs for feed construction |
+| `conversations` | `participantIds ARRAY_CONTAINS`, `lastMessageAt DESC` | Conversation list for a given user, most recent first |
 | `users` | — | No composite index needed for displayName prefix query (range filter and orderBy on same field; single-field index sufficient) |
 
 **Note:** The profile posts query `.where('userId', '==', uid).orderBy('createdAt', 'desc')` uses the `posts (userId ASC, createdAt DESC)` index above. The followers/following queries (`.where('followedId', '==', uid)` and `.where('followerId', '==', uid)` without `orderBy` on a second field) require no composite index.
@@ -266,6 +323,42 @@ All four access patterns are fully covered by existing rules. **No changes to `s
 | `firebase-schema.md` — profile posts query pattern documented; follows query patterns expanded | ✅ Done |
 | `firestore.indexes.json` — composite index (`userId ASC`, `createdAt DESC`) already present; no new entry needed | ✅ Confirmed |
 | `firestore.rules` — all four access patterns covered by existing `allow read` rules | ✅ No change needed |
+
+---
+
+## Firestore Rules Audit — SOCAA-516 Chat
+
+**Audit date:** 2026-05-26
+**Classification:** Safe — additive only. Two new collections (`conversations`, `conversations/{id}/messages`). No existing data migration required.
+
+### Collections Affected
+
+| Collection | Change | Notes |
+|---|---|---|
+| `conversations` | New collection | One document per DM thread; participants listed in `participantIds` array |
+| `conversations/{id}/messages` | New subcollection | One document per message; access gated on parent conversation participation |
+
+### Rules Coverage
+
+| Operation | Collection | Who | Rule Added |
+|---|---|---|---|
+| Read conversation list | `conversations` | Participant | `allow read` when `request.auth.uid in resource.data.participantIds` ✅ |
+| Create conversation | `conversations` | Authenticated user (participant) | `allow create` when `request.auth.uid in request.resource.data.participantIds` ✅ |
+| Update conversation (lastMessage, unreadCounts) | `conversations` | Participant | `allow update` when `request.auth.uid in resource.data.participantIds` ✅ |
+| Read messages | `conversations/{id}/messages` | Participant of parent conversation | `allow read` gated on `get(parent).data.participantIds` ✅ |
+| Send message | `conversations/{id}/messages` | Participant of parent conversation | `allow create` gated on `get(parent).data.participantIds` and `senderId == auth.uid` ✅ |
+
+### Composite Index
+
+| Collection | Fields | Required | Reason |
+|---|---|---|---|
+| `conversations` | `participantIds ARRAY_CONTAINS`, `lastMessageAt DESC` | **Yes** | `arrayContains` filter combined with `orderBy` on a different field requires a composite index |
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — `conversations` and `conversations/{id}/messages` collections added | ✅ Done |
+| `firestore.rules` — conversations + messages rules added | ✅ Done |
+| `firestore.indexes.json` — composite index (`participantIds CONTAINS`, `lastMessageAt DESC`) added | ✅ Done |
 
 ---
 
