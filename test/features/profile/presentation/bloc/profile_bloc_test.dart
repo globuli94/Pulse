@@ -215,6 +215,26 @@ void main() {
 
     group('ProfileDeleteAccountRequested', () {
       blocTest<ProfileBloc, ProfileState>(
+        'BUG-001d: emits [ProfileAccountDeleted] when deleteAccount succeeds and calls signOut',
+        build: () {
+          when(() => mockProfileRepository.deleteAccount())
+              .thenAnswer((_) async => {});
+          when(() => mockAuthRepository.signOut())
+              .thenAnswer((_) async => {});
+          return profileBloc;
+        },
+        seed: () => ProfileLoaded(profile: testProfile),
+        act: (bloc) => bloc.add(const ProfileDeleteAccountRequested()),
+        expect: () => [
+          const ProfileAccountDeleted(),
+        ],
+        verify: (_) {
+          verify(() => mockProfileRepository.deleteAccount()).called(1);
+          verify(() => mockAuthRepository.signOut()).called(1);
+        },
+      );
+
+      blocTest<ProfileBloc, ProfileState>(
         'emits [ProfileAccountDeleted] when deleteAccount succeeds',
         build: () {
           when(() => mockProfileRepository.deleteAccount())
