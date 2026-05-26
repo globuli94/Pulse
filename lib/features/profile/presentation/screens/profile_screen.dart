@@ -40,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context.read<ProfileBloc>().add(ProfileLoadRequested(uid: uid));
         context
             .read<ProfilePostsBloc>()
-            .add(ProfilePostsLoadRequested(uid: uid));
+            .add(ProfilePostsSubscriptionRequested(uid: uid));
       }
     }
   }

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/navigation/shell_tab_controller.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/datasources/auth_firebase_data_source.dart';
@@ -89,6 +90,10 @@ class PulseApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>.value(value: _authRepository),
+        RepositoryProvider<ShellTabController>(
+          create: (_) => ShellTabController(),
+          dispose: (c) => c.dispose(),
+        ),
         RepositoryProvider<ProfileRepository>(
           create: (context) => ProfileRepositoryImpl(
             dataSource: ProfileFirebaseDataSource(

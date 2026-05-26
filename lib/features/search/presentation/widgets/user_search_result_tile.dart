@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../core/navigation/shell_tab_controller.dart';
 import '../../../follows/domain/repositories/follows_repository.dart';
 import '../../../follows/presentation/bloc/follow_bloc.dart';
 import '../../../profile/domain/entities/user_profile.dart';
@@ -122,7 +123,14 @@ class _UserSearchResultTileBody extends StatelessWidget {
                 );
               },
             ),
-      onTap: () => context.push('/profile/${user.uid}'),
+      // BUG-001f: tapping own entry in search results switches to Profile tab.
+      onTap: () {
+        if (user.uid == currentUserId) {
+          context.read<ShellTabController>().value = 3;
+        } else {
+          context.push('/profile/${user.uid}');
+        }
+      },
     );
   }
 }

@@ -20,3 +20,18 @@ final class ProfilePostsLoadRequested extends ProfilePostsEvent {
   @override
   List<Object?> get props => [uid];
 }
+
+/// Dispatched to subscribe to a live stream of posts for the user with [uid].
+///
+/// The BLoC stays subscribed until a new [ProfilePostsSubscriptionRequested]
+/// is dispatched or the BLoC is closed.
+final class ProfilePostsSubscriptionRequested extends ProfilePostsEvent {
+  /// Creates a [ProfilePostsSubscriptionRequested] event.
+  const ProfilePostsSubscriptionRequested({required this.uid});
+
+  /// The UID of the user whose posts to stream.
+  final String uid;
+
+  @override
+  List<Object?> get props => [uid];
+}

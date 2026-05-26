@@ -17,6 +17,8 @@ import 'package:pulse/features/profile/presentation/bloc/profile_posts_bloc.dart
 import 'package:pulse/features/home/presentation/bloc/shell_tab_cubit.dart';
 import 'package:pulse/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:pulse/features/notifications/presentation/bloc/unread_notifications_count_cubit.dart';
+import 'package:pulse/core/navigation/shell_tab_controller.dart';
+import 'package:provider/provider.dart';
 
 class MockAuthBloc extends Mock implements AuthBloc {}
 class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
@@ -37,7 +39,7 @@ void main() {
     late MockUnreadCountCubit mockUnreadCountCubit;
     late MockNotificationsRepository mockNotificationsRepository;
     late MockUnreadNotificationsCountCubit mockUnreadNotificationsCountCubit;
-    late ShellTabCubit shellTabCubit;
+    late ShellTabController shellTabController;
 
     setUp(() {
       mockAuthBloc = MockAuthBloc();
@@ -48,7 +50,11 @@ void main() {
       mockUnreadCountCubit = MockUnreadCountCubit();
       mockNotificationsRepository = MockNotificationsRepository();
       mockUnreadNotificationsCountCubit = MockUnreadNotificationsCountCubit();
-      shellTabCubit = ShellTabCubit();
+      shellTabController = ShellTabController();
+      addTearDown(shellTabController.dispose);
+      final previousCheck = Provider.debugCheckInvalidValueType;
+      Provider.debugCheckInvalidValueType = null;
+      addTearDown(() => Provider.debugCheckInvalidValueType = previousCheck);
       when(() => mockChatRepository.watchConversations(any()))
           .thenAnswer((_) => const Stream.empty());
       when(() => mockUnreadCountCubit.state).thenReturn(0);
@@ -108,6 +114,9 @@ void main() {
               RepositoryProvider<NotificationsRepository>(
                 create: (_) => mockNotificationsRepository,
               ),
+              RepositoryProvider<ShellTabController>(
+                create: (_) => shellTabController,
+              ),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -165,6 +174,9 @@ void main() {
               RepositoryProvider<NotificationsRepository>(
                 create: (_) => mockNotificationsRepository,
               ),
+              RepositoryProvider<ShellTabController>(
+                create: (_) => shellTabController,
+              ),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -216,6 +228,9 @@ void main() {
               ),
               RepositoryProvider<NotificationsRepository>(
                 create: (_) => mockNotificationsRepository,
+              ),
+              RepositoryProvider<ShellTabController>(
+                create: (_) => shellTabController,
               ),
             ],
             child: MultiBlocProvider(

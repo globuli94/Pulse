@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../core/navigation/shell_tab_controller.dart';
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/home/presentation/bloc/shell_tab_cubit.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
@@ -66,9 +67,11 @@ class _PostCardBody extends StatelessWidget {
             Row(
               children: [
                 GestureDetector(
+                  // BUG-001f: tapping own profile switches to the Profile tab
+                  // instead of opening the read-only OtherProfileScreen.
                   onTap: () {
-                    if (currentUid != null && post.userId == currentUid) {
-                      context.read<ShellTabCubit>().switchToTab(3);
+                    if (post.userId == currentUid) {
+                      context.read<ShellTabController>().value = 3;
                     } else {
                       context.push('/profile/${post.userId}');
                     }
