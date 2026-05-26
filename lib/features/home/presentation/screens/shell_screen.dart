@@ -50,6 +50,7 @@ class _ShellScreenState extends State<ShellScreen> {
       bottomNavigationBar: BlocBuilder<UnreadCountCubit, int>(
         builder: (context, unreadCount) {
           return BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             currentIndex: _currentIndex,
             onTap: (index) => setState(() => _currentIndex = index),
             items: [
