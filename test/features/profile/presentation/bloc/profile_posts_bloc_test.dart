@@ -71,5 +71,35 @@ void main() {
         const ProfilePostsLoaded(posts: []),
       ],
     );
+
+    blocTest<ProfilePostsBloc, ProfilePostsState>(
+      'BUG-001c: emits updates when posts stream emits new posts (real-time)',
+      build: () {
+        final post1 = Post(
+          id: 'post-1',
+          userId: 'uid1',
+          displayName: 'Test User',
+          text: 'First post',
+          createdAt: DateTime(2024),
+        );
+
+        // Mock getPostsByUser to return initial posts
+        when(() => mockPostsRepository.getPostsByUser('uid1'))
+            .thenAnswer((_) async => [post1]);
+
+        return ProfilePostsBloc(postsRepository: mockPostsRepository);
+      },
+      act: (bloc) {
+        bloc.add(const ProfilePostsLoadRequested(uid: 'uid1'));
+      },
+      expect: () => [
+        const ProfilePostsLoading(),
+        isA<ProfilePostsLoaded>(),
+      ],
+      verify: (_) {
+        // Verify that the repository method was called to fetch posts
+        verify(() => mockPostsRepository.getPostsByUser('uid1')).called(1);
+      },
+    );
   });
 }

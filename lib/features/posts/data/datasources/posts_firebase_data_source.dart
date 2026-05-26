@@ -127,6 +127,21 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   }
 
   @override
+  Stream<List<Map<String, dynamic>>> watchPostsByUser(String uid) {
+    return _firestore
+        .collection('posts')
+        .where('userId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+              .toList(),
+        );
+  }
+
+  @override
   Future<void> likePost({
     required String postId,
     required String userId,

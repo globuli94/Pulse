@@ -100,6 +100,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     try {
       await _profileRepository.deleteAccount();
+      await _authRepository.signOut();
       emit(const ProfileAccountDeleted());
     } catch (e) {
       emit(ProfileError(message: e.toString()));

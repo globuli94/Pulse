@@ -13,14 +13,17 @@ part 'profile_posts_state.dart';
 
 /// BLoC responsible for loading and displaying a user's posts on their profile.
 ///
-/// Registered globally in `main.dart`. Dispatch [ProfilePostsLoadRequested]
-/// with the viewed user's UID whenever the profile screen is shown.
+/// Registered globally in `main.dart`. Dispatch
+/// [ProfilePostsSubscriptionRequested] with the authenticated user's UID to
+/// start a live Firestore stream that updates whenever posts are added or
+/// deleted. [ProfilePostsLoadRequested] remains available for one-shot fetches.
 class ProfilePostsBloc extends Bloc<ProfilePostsEvent, ProfilePostsState> {
   /// Creates a [ProfilePostsBloc].
   ProfilePostsBloc({required PostsRepository postsRepository})
       : _postsRepository = postsRepository,
         super(const ProfilePostsInitial()) {
     on<ProfilePostsLoadRequested>(_onLoadRequested);
+    on<ProfilePostsSubscriptionRequested>(_onSubscriptionRequested);
   }
 
   final PostsRepository _postsRepository;
@@ -36,5 +39,17 @@ class ProfilePostsBloc extends Bloc<ProfilePostsEvent, ProfilePostsState> {
     } catch (e) {
       emit(ProfilePostsError(message: e.toString()));
     }
+  }
+
+  Future<void> _onSubscriptionRequested(
+    ProfilePostsSubscriptionRequested event,
+    Emitter<ProfilePostsState> emit,
+  ) async {
+    emit(const ProfilePostsLoading());
+    await emit.forEach(
+      _postsRepository.watchPostsByUser(event.uid),
+      onData: (posts) => ProfilePostsLoaded(posts: posts),
+      onError: (e, _) => ProfilePostsError(message: e.toString()),
+    );
   }
 }

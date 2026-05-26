@@ -50,6 +50,11 @@ abstract class PostsRepository {
   /// Requires a Firestore composite index on `posts(userId ASC, createdAt DESC)`.
   Future<List<Post>> getPostsByUser(String uid);
 
+  /// Returns a live stream of up to 20 posts authored by [uid], newest first.
+  ///
+  /// Uses the same Firestore composite index as [getPostsByUser].
+  Stream<List<Post>> watchPostsByUser(String uid);
+
   /// Likes the post [postId] on behalf of [userId].
   ///
   /// Writes `likes/{userId}_{postId}` and increments `posts/{postId}.likeCount`.
