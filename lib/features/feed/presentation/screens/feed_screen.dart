@@ -76,21 +76,6 @@ class _FeedScreenState extends State<FeedScreen> {
           }
 
           if (state is PostsFeedLoaded) {
-            if (state.posts.isEmpty) {
-              // RefreshIndicator requires a scrollable child to detect the
-              // pull gesture even when there are no list items (BUG-001b).
-              return RefreshIndicator(
-                onRefresh: _onRefresh,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: const [
-                    SliverFillRemaining(
-                      child: Center(child: Text('No posts yet')),
-                    ),
-                  ],
-                ),
-              );
-            }
             return RefreshIndicator(
               onRefresh: _onRefresh,
               child: state.posts.isEmpty
