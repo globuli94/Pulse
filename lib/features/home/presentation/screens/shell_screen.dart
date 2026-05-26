@@ -4,10 +4,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../chat/presentation/bloc/unread_count_cubit.dart';
 import '../../../chat/presentation/screens/conversations_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
+import '../../../notifications/presentation/bloc/unread_notifications_count_cubit.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../search/presentation/screens/search_screen.dart';
 
@@ -21,6 +23,9 @@ import '../../../search/presentation/screens/search_screen.dart';
 ///
 /// The Messages tab shows an unread count badge sourced from the global
 /// [UnreadCountCubit] registered in main.dart.
+///
+/// The bell icon in the AppBar shows the unread notification count sourced from
+/// the global [UnreadNotificationsCountCubit] registered in main.dart.
 class ShellScreen extends StatefulWidget {
   /// Creates a [ShellScreen].
   const ShellScreen({super.key});
@@ -32,9 +37,15 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   int _currentIndex = 0;
 
+  static const _tabTitles = ['Feed', 'Search', 'Messages', 'Profile'];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_tabTitles[_currentIndex]),
+        actions: const [_NotificationBellButton()],
+      ),
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -78,6 +89,28 @@ class _ShellScreenState extends State<ShellScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// Bell icon button in the AppBar that shows the unread notification count.
+class _NotificationBellButton extends StatelessWidget {
+  const _NotificationBellButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<UnreadNotificationsCountCubit, int>(
+      builder: (context, unreadCount) {
+        final icon = IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () => context.push('/notifications'),
+        );
+        if (unreadCount <= 0) return icon;
+        return Badge(
+          label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+          child: icon,
+        );
+      },
     );
   }
 }

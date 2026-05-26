@@ -8,6 +8,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/forgot_password_bloc.dart';
+import '../../features/notifications/domain/repositories/notifications_repository.dart';
+import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/auth/presentation/bloc/login_bloc.dart';
 import '../../features/auth/presentation/bloc/sign_up_bloc.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -155,6 +158,20 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
               followsRepository: context.read<FollowsRepository>(),
             )..add(FollowingLoadRequested(uid: uid)),
             child: FollowingScreen(viewedUid: uid),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) {
+          final authState = context.read<AuthBloc>().state;
+          final currentUserId =
+              authState is Authenticated ? authState.user.uid : '';
+          return BlocProvider<NotificationsBloc>(
+            create: (_) => NotificationsBloc(
+              repository: context.read<NotificationsRepository>(),
+            )..add(NotificationsSubscriptionRequested(userId: currentUserId)),
+            child: const NotificationsScreen(),
           );
         },
       ),

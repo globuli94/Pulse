@@ -25,6 +25,13 @@ class FollowsFirebaseDataSource implements FollowsRemoteDataSource {
     required String followerId,
     required String followeeId,
   }) async {
+    // Read the actor's user doc to build the notification.
+    final actorDoc =
+        await _firestore.collection('users').doc(followerId).get();
+    final actorData = actorDoc.data() ?? {};
+    final actorDisplayName = actorData['displayName'] as String? ?? '';
+    final actorPhotoUrl = actorData['photoUrl'] as String?;
+
     final batch = _firestore.batch();
 
     // Write the follows document.
@@ -48,6 +55,23 @@ class FollowsFirebaseDataSource implements FollowsRemoteDataSource {
       _firestore.collection('users').doc(followeeId),
       {'followerCount': FieldValue.increment(1)},
     );
+
+    // Write a follow notification for the followee (guard against self-follow).
+    if (followerId != followeeId) {
+      final notifRef = _firestore.collection('notifications').doc();
+      final notifData = <String, dynamic>{
+        'id': notifRef.id,
+        'userId': followeeId,
+        'type': 'follow',
+        'actorId': followerId,
+        'actorDisplayName': actorDisplayName,
+        'postId': null,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+      if (actorPhotoUrl != null) notifData['actorPhotoUrl'] = actorPhotoUrl;
+      batch.set(notifRef, notifData);
+    }
 
     await batch.commit();
   }

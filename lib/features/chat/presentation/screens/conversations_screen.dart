@@ -49,7 +49,6 @@ class _ConversationsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
       body: BlocBuilder<ConversationsBloc, ConversationsState>(
         builder: (context, state) {
           if (state is ConversationsLoading || state is ConversationsInitial) {
