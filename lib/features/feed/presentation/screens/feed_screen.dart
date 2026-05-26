@@ -76,26 +76,34 @@ class _FeedScreenState extends State<FeedScreen> {
           }
 
           if (state is PostsFeedLoaded) {
-            if (state.posts.isEmpty) {
-              return const Center(child: Text('No posts yet'));
-            }
             return RefreshIndicator(
               onRefresh: _onRefresh,
-              child: ListView.builder(
-                controller: _scrollController,
-                // Extra slot for bottom loading indicator.
-                itemCount:
-                    state.posts.length + (state.isLoadingMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == state.posts.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  return PostCard(post: state.posts[index]);
-                },
-              ),
+              child: state.posts.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        Center(
+                          heightFactor: 8,
+                          child: Text('No posts yet'),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      // Extra slot for bottom loading indicator.
+                      itemCount:
+                          state.posts.length + (state.isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == state.posts.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return PostCard(post: state.posts[index]);
+                      },
+                    ),
             );
           }
 

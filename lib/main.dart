@@ -23,6 +23,7 @@ import 'features/chat/presentation/bloc/unread_count_cubit.dart';
 import 'features/notifications/data/datasources/notifications_firebase_data_source.dart';
 import 'features/notifications/data/repositories/notifications_repository_impl.dart';
 import 'features/notifications/domain/repositories/notifications_repository.dart';
+import 'features/home/presentation/bloc/shell_tab_cubit.dart';
 import 'features/notifications/presentation/bloc/unread_notifications_count_cubit.dart';
 import 'features/follows/data/datasources/follows_firebase_data_source.dart';
 import 'features/follows/data/repositories/follows_repository_impl.dart';
@@ -137,6 +138,9 @@ class PulseApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: _authBloc),
+          BlocProvider<ShellTabCubit>(
+            create: (_) => ShellTabCubit(),
+          ),
           BlocProvider<ProfileBloc>(
             create: (context) => ProfileBloc(
               profileRepository: context.read<ProfileRepository>(),

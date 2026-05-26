@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../features/home/presentation/bloc/shell_tab_cubit.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/posts_repository.dart';
@@ -65,7 +66,13 @@ class _PostCardBody extends StatelessWidget {
             Row(
               children: [
                 GestureDetector(
-                  onTap: () => context.push('/profile/${post.userId}'),
+                  onTap: () {
+                    if (currentUid != null && post.userId == currentUid) {
+                      context.read<ShellTabCubit>().switchToTab(3);
+                    } else {
+                      context.push('/profile/${post.userId}');
+                    }
+                  },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
