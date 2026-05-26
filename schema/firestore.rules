@@ -68,6 +68,12 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['likeCount']);
+
+      // Post author may update displayName and avatarUrl on their own posts (profile update propagation)
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['displayName', 'avatarUrl']);
     }
 
     // ---------------------------------------------------------------
