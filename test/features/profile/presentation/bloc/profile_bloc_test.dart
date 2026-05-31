@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pulse/features/auth/domain/repositories/auth_repository.dart';
+import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/profile/domain/entities/user_profile.dart';
 import 'package:pulse/features/profile/domain/repositories/profile_repository.dart';
 import 'package:pulse/features/profile/presentation/bloc/profile_bloc.dart';
@@ -10,17 +11,27 @@ class MockProfileRepository extends Mock implements ProfileRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
+class MockPostsRepository extends Mock implements PostsRepository {}
+
 void main() {
   late MockProfileRepository mockProfileRepository;
   late MockAuthRepository mockAuthRepository;
+  late MockPostsRepository mockPostsRepository;
   late ProfileBloc profileBloc;
 
   setUp(() {
     mockProfileRepository = MockProfileRepository();
     mockAuthRepository = MockAuthRepository();
+    mockPostsRepository = MockPostsRepository();
+    when(() => mockPostsRepository.updateAuthorInfoOnPosts(
+          userId: any(named: 'userId'),
+          displayName: any(named: 'displayName'),
+          avatarUrl: any(named: 'avatarUrl'),
+        )).thenAnswer((_) async {});
     profileBloc = ProfileBloc(
       profileRepository: mockProfileRepository,
       authRepository: mockAuthRepository,
+      postsRepository: mockPostsRepository,
     );
   });
 

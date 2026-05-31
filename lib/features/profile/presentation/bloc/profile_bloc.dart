@@ -22,7 +22,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ProfileBloc({
     required ProfileRepository profileRepository,
     required AuthRepository authRepository,
-    PostsRepository? postsRepository,
+    required PostsRepository postsRepository,
   })  : _profileRepository = profileRepository,
         _authRepository = authRepository,
         _postsRepository = postsRepository,
@@ -35,7 +35,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   final ProfileRepository _profileRepository;
   final AuthRepository _authRepository;
-  final PostsRepository? _postsRepository;
+  final PostsRepository _postsRepository;
 
   Future<void> _onProfileLoadRequested(
     ProfileLoadRequested event,
@@ -85,16 +85,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
       // Best-effort: propagate the new name/avatar to existing posts.
       // A failure here must not surface as a profile-save failure.
-      if (_postsRepository != null) {
-        try {
-          await _postsRepository.updateAuthorInfoOnPosts(
-            userId: event.uid,
-            displayName: updatedProfile.displayName,
-            avatarUrl: updatedProfile.avatarUrl,
-          );
-        } catch (e) {
-          debugPrint('ProfileBloc: updateAuthorInfoOnPosts failed: $e');
-        }
+      try {
+        await _postsRepository.updateAuthorInfoOnPosts(
+          userId: event.uid,
+          displayName: updatedProfile.displayName,
+          avatarUrl: updatedProfile.avatarUrl,
+        );
+      } catch (e) {
+        debugPrint('ProfileBloc: updateAuthorInfoOnPosts failed: $e');
       }
     } catch (e) {
       emit(ProfileError(message: e.toString()));
