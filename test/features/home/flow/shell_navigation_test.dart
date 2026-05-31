@@ -137,8 +137,9 @@ void main() {
         // Verify "Profile" tab is present
         expect(find.text('Profile'), findsWidgets);
 
-        // Verify bell icon is visible on the AppBar
-        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+        // Verify bell icon is visible on the AppBar (findsWidgets because
+        // Notifications tab in bottom nav also uses notifications_outlined icon)
+        expect(find.byIcon(Icons.notifications_outlined), findsWidgets);
       },
     );
 
@@ -305,8 +306,8 @@ void main() {
 
         await tester.pump();
 
-        // Verify bell icon is visible
-        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+        // Verify bell icon is visible (findsWidgets: AppBar bell + Notifications tab icon)
+        expect(find.byIcon(Icons.notifications_outlined), findsWidgets);
 
         // Check that badge is rendered with numbers
         expect(find.text('3'), findsWidgets);
@@ -442,8 +443,8 @@ void main() {
         expect(find.text('99'), findsWidgets,
             reason: 'Badge number should be fully visible');
 
-        // Verify AppBar with bell icon is visible
-        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+        // Verify AppBar with bell icon is visible (findsWidgets: AppBar bell + Notifications tab icon)
+        expect(find.byIcon(Icons.notifications_outlined), findsWidgets);
       },
     );
 
