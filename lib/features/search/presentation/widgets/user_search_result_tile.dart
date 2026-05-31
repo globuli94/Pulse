@@ -126,7 +126,7 @@ class _UserSearchResultTileBody extends StatelessWidget {
       // BUG-001f: tapping own entry in search results switches to Profile tab.
       onTap: () {
         if (user.uid == currentUserId) {
-          context.read<ShellTabCubit>().switchToTab(3);
+          context.read<ShellTabCubit>().switchToTab(4);
         } else {
           context.push('/profile/${user.uid}');
         }

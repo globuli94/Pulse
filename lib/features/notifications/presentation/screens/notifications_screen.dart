@@ -10,24 +10,34 @@ import '../widgets/notification_tile.dart';
 
 /// Screen that shows the list of in-app notifications for the current user.
 ///
-/// [NotificationsBloc] is provided by the router builder — this screen only
-/// consumes it.
+/// [NotificationsBloc] is provided by the router builder or the shell screen —
+/// this screen only consumes it.
+///
+/// Set [showAppBar] to `false` when embedding inside [ShellScreen] to avoid a
+/// double AppBar — the shell already renders the global title bar.
 class NotificationsScreen extends StatelessWidget {
   /// Creates a [NotificationsScreen].
-  const NotificationsScreen({super.key});
+  const NotificationsScreen({super.key, this.showAppBar = true});
+
+  /// Whether to render the local [AppBar].
+  ///
+  /// Pass `false` when this screen is hosted inside [ShellScreen].
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Notifications',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      appBar: showAppBar
+          ? AppBar(
+              title: Text(
+                'Notifications',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
       body: BlocBuilder<NotificationsBloc, NotificationsState>(
         builder: (context, state) {
           if (state is NotificationsLoading || state is NotificationsInitial) {
