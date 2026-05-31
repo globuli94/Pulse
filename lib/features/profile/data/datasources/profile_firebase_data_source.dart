@@ -48,25 +48,6 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
     if (data.isEmpty) return;
 
     await _firestore.collection('users').doc(uid).update(data);
-
-    // Propagate displayName/avatarUrl to all posts by this user.
-    final postUpdates = <String, dynamic>{};
-    if (displayName != null) postUpdates['displayName'] = displayName;
-    if (avatarUrl != null) postUpdates['avatarUrl'] = avatarUrl;
-
-    if (postUpdates.isNotEmpty) {
-      final snapshot = await _firestore
-          .collection('posts')
-          .where('userId', isEqualTo: uid)
-          .get();
-      if (snapshot.docs.isNotEmpty) {
-        final batch = _firestore.batch();
-        for (final doc in snapshot.docs) {
-          batch.update(doc.reference, postUpdates);
-        }
-        await batch.commit();
-      }
-    }
   }
 
   @override
