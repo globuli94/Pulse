@@ -538,7 +538,7 @@ void main() {
         await tester.tap(find.text('Test User'));
         await tester.pump();
 
-        expect(shellTabCubit.state, 4); // Profile is index 4 after Notifications tab added at index 3
+        expect(shellTabCubit.state, 3); // Profile is index 3 (Notifications tab removed)
       },
     );
 
