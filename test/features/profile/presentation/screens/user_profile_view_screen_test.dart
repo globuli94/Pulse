@@ -380,5 +380,32 @@ void main() {
               .having((e) => e.followeeId, 'followeeId', 'other-uid'))))
           .called(1);
     });
+
+    testWidgets('renders content inside SingleChildScrollView when loaded',
+        (WidgetTester tester) async {
+      final profile = UserProfile(
+        uid: 'other-uid',
+        displayName: 'Scroll Test User',
+        bio: 'Bio text',
+        avatarUrl: null,
+        postCount: 3,
+        followerCount: 10,
+        followingCount: 5,
+      );
+
+      when(() => mockUserProfileBloc.state)
+          .thenReturn(UserProfileLoaded(profile));
+      when(() => mockFollowBloc.state)
+          .thenReturn(const FollowLoaded(isFollowing: false));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          viewedUid: 'other-uid',
+          currentUserId: 'current-uid',
+        ),
+      );
+
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
   });
 }
