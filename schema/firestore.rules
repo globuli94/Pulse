@@ -13,14 +13,13 @@ service cloud.firestore {
 
       // Owner may create their own document on first sign-in
       allow create: if request.auth != null
-                    && request.auth.uid == uid
-                    && request.resource.data.uid == uid;
+                    && request.auth.uid == uid;
 
       // Owner may update only the permitted profile fields
       allow update: if request.auth != null
                     && request.auth.uid == uid
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['displayName', 'bio', 'avatarUrl', 'postCount']);
+                         .hasOnly(['displayName', 'bio', 'avatarUrl', 'postCount', 'username']);
 
       // Any authenticated user may update follower/following counts (for follow/unfollow transactions)
       allow update: if request.auth != null
