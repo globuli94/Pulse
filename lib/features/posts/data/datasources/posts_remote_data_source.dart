@@ -56,4 +56,12 @@ abstract class PostsRemoteDataSource {
 
   /// Real-time stream of the `likeCount` field on `posts/{postId}`.
   Stream<int> watchLikeCount(String postId);
+
+  /// Batch-updates `displayName` and `avatarUrl` on all posts authored by
+  /// [userId]. If [avatarUrl] is null the field is explicitly set to null.
+  Future<void> updateAuthorInfoOnPosts({
+    required String userId,
+    required String displayName,
+    required String? avatarUrl,
+  });
 }

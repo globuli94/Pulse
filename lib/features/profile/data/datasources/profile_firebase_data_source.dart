@@ -49,12 +49,12 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
 
     await _firestore.collection('users').doc(uid).update(data);
 
-    // Propagate displayName/avatarUrl to all posts by this user.
-    final postUpdates = <String, dynamic>{};
-    if (displayName != null) postUpdates['displayName'] = displayName;
-    if (avatarUrl != null) postUpdates['avatarUrl'] = avatarUrl;
+    // Propagate display-name / avatar changes to existing posts.
+    final postFields = <String, dynamic>{};
+    if (displayName != null) postFields['displayName'] = displayName;
+    if (avatarUrl != null) postFields['avatarUrl'] = avatarUrl;
 
-    if (postUpdates.isNotEmpty) {
+    if (postFields.isNotEmpty) {
       final snapshot = await _firestore
           .collection('posts')
           .where('userId', isEqualTo: uid)
@@ -62,7 +62,7 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
       if (snapshot.docs.isNotEmpty) {
         final batch = _firestore.batch();
         for (final doc in snapshot.docs) {
-          batch.update(doc.reference, postUpdates);
+          batch.update(doc.reference, postFields);
         }
         await batch.commit();
       }

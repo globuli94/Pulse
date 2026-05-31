@@ -98,6 +98,18 @@ class PostsRepositoryImpl implements PostsRepository {
   Stream<int> watchLikeCount(String postId) =>
       _dataSource.watchLikeCount(postId);
 
+  @override
+  Future<void> updateAuthorInfoOnPosts({
+    required String userId,
+    required String displayName,
+    required String? avatarUrl,
+  }) =>
+      _dataSource.updateAuthorInfoOnPosts(
+        userId: userId,
+        displayName: displayName,
+        avatarUrl: avatarUrl,
+      );
+
   Post _mapToPost(Map<String, dynamic> map) {
     final createdAt = map['createdAt'];
     final DateTime dateTime;

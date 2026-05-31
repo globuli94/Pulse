@@ -238,6 +238,27 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   }
 
   @override
+  Future<void> updateAuthorInfoOnPosts({
+    required String userId,
+    required String displayName,
+    required String? avatarUrl,
+  }) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .where('userId', isEqualTo: userId)
+        .get();
+    if (snapshot.docs.isEmpty) return;
+    final batch = _firestore.batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {
+        'displayName': displayName,
+        'avatarUrl': avatarUrl,
+      });
+    }
+    await batch.commit();
+  }
+
+  @override
   Future<void> deletePost({
     required String postId,
     required String userId,
