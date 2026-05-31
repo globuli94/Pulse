@@ -216,6 +216,28 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   }
 
   @override
+  Stream<bool> watchIsLiked({
+    required String postId,
+    required String userId,
+  }) {
+    final likeId = '${userId}_$postId';
+    return _firestore
+        .collection('likes')
+        .doc(likeId)
+        .snapshots()
+        .map((doc) => doc.exists);
+  }
+
+  @override
+  Stream<int> watchLikeCount(String postId) {
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .snapshots()
+        .map((doc) => (doc.data()?['likeCount'] as num?)?.toInt() ?? 0);
+  }
+
+  @override
   Future<void> deletePost({
     required String postId,
     required String userId,

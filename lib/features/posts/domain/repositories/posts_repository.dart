@@ -69,4 +69,11 @@ abstract class PostsRepository {
   ///
   /// Single-document read: `likes/{userId}_{postId}`.
   Future<bool> isLiked({required String postId, required String userId});
+
+  /// Real-time stream: emits `true` when [userId] has liked [postId], `false`
+  /// when they have not. Watches `likes/{userId}_{postId}` existence.
+  Stream<bool> watchIsLiked({required String postId, required String userId});
+
+  /// Real-time stream of the `likeCount` field on `posts/{postId}`.
+  Stream<int> watchLikeCount(String postId);
 }

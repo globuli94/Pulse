@@ -90,6 +90,14 @@ class PostsRepositoryImpl implements PostsRepository {
   Future<bool> isLiked({required String postId, required String userId}) =>
       _dataSource.isLiked(postId: postId, userId: userId);
 
+  @override
+  Stream<bool> watchIsLiked({required String postId, required String userId}) =>
+      _dataSource.watchIsLiked(postId: postId, userId: userId);
+
+  @override
+  Stream<int> watchLikeCount(String postId) =>
+      _dataSource.watchLikeCount(postId);
+
   Post _mapToPost(Map<String, dynamic> map) {
     final createdAt = map['createdAt'];
     final DateTime dateTime;
