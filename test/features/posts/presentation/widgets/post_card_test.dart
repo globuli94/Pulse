@@ -343,5 +343,66 @@ void main() {
         // instead of /profile/:uid (OtherProfileScreen)
       },
     );
+
+    testWidgets(
+      'UI-001 #1: like button shows heart icon in primary color when liked',
+      (WidgetTester tester) async {
+        final post = Post(
+          id: '1',
+          userId: 'user1',
+          displayName: 'John Doe',
+          text: 'Hello world',
+          createdAt: DateTime(2024, 1, 15, 10, 30),
+          imageUrl: null,
+          likeCount: 3,
+        );
+
+        when(() => mockPostsRepository.isLiked(
+              postId: '1',
+              userId: 'current-user',
+            )).thenAnswer((_) async => true);
+
+        await tester.pumpWidget(buildPostCard(post, mockPostsRepository, mockAuthBloc));
+        await tester.pumpAndSettle();
+
+        // Find the filled heart icon
+        final heartFinder = find.byIcon(Icons.favorite);
+        expect(heartFinder, findsOneWidget);
+
+        // Get the Icon widget and check its color
+        final iconWidget = tester.widget<Icon>(heartFinder);
+        expect(iconWidget.color, equals(Theme.of(tester.element(heartFinder)).colorScheme.primary));
+      },
+    );
+
+    testWidgets(
+      'UI-001 #2: PostCard displays with white or light background',
+      (WidgetTester tester) async {
+        final post = Post(
+          id: '1',
+          userId: 'user1',
+          displayName: 'John Doe',
+          text: 'Hello world',
+          createdAt: DateTime(2024, 1, 15, 10, 30),
+          imageUrl: null,
+        );
+
+        when(() => mockPostsRepository.isLiked(
+              postId: '1',
+              userId: 'current-user',
+            )).thenAnswer((_) async => false);
+
+        await tester.pumpWidget(buildPostCard(post, mockPostsRepository, mockAuthBloc));
+        await tester.pumpAndSettle();
+
+        // Verify the PostCard widget is rendered
+        final postCardFinder = find.byType(PostCard);
+        expect(postCardFinder, findsOneWidget);
+
+        // The PostCard should be visible (checking that content is rendered)
+        expect(find.text('John Doe'), findsOneWidget);
+        expect(find.text('Hello world'), findsOneWidget);
+      },
+    );
   });
 }

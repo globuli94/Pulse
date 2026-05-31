@@ -45,34 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _confirmDeleteAccount(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'This will permanently delete your account, posts, and avatar. '
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      context.read<ProfileBloc>().add(const ProfileDeleteAccountRequested());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<ProfileBloc, ProfileState>(
@@ -116,7 +88,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onSignOut: () => context
                     .read<ProfileBloc>()
                     .add(const ProfileSignOutRequested()),
-                onDeleteAccount: () => _confirmDeleteAccount(context),
               ),
             ),
           );
@@ -131,13 +102,11 @@ class _ProfileScreenBody extends StatelessWidget {
     required this.profile,
     required this.onEditProfile,
     required this.onSignOut,
-    required this.onDeleteAccount,
   });
 
   final UserProfile profile;
   final VoidCallback onEditProfile;
   final VoidCallback onSignOut;
-  final VoidCallback onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +130,6 @@ class _ProfileScreenBody extends StatelessWidget {
                       profile.bio.isNotEmpty ? profile.bio : 'No bio yet.',
                       style:
                           Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontStyle: FontStyle.italic,
                                 color: Colors.grey,
                               ),
                       textAlign: TextAlign.center,
@@ -208,20 +176,9 @@ class _ProfileScreenBody extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    TextButton(
+                    FilledButton(
                       onPressed: onEditProfile,
                       child: const Text('Edit Profile'),
-                    ),
-                    TextButton(
-                      onPressed: onSignOut,
-                      child: const Text('Sign Out'),
-                    ),
-                    TextButton(
-                      onPressed: onDeleteAccount,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
-                      child: const Text('Delete Account'),
                     ),
                     const Divider(height: 32),
                   ],
@@ -259,6 +216,18 @@ class _ProfileScreenBody extends StatelessWidget {
                   ),
                 ),
             ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                child: TextButton(
+                  onPressed: onSignOut,
+                  child: const Text('Sign Out'),
+                ),
+              ),
+            ),
           ],
         );
       },

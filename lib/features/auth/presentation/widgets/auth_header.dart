@@ -29,6 +29,15 @@ class AuthHeader extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Feel connected. Stay in pulse.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w300,
+              ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

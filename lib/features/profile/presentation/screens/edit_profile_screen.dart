@@ -80,6 +80,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _selectedAvatarPath = picked.path);
   }
 
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will permanently delete your account, posts, and avatar. '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<ProfileBloc>().add(const ProfileDeleteAccountRequested());
+    }
+  }
+
   void _save(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
     if (authState is! Authenticated) return;
@@ -177,6 +205,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             onPressed: () => _save(context),
                             child: const Text('Save'),
                           ),
+                    const SizedBox(height: 32),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed:
+                          isUpdating ? null : () => _confirmDeleteAccount(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Delete Account'),
+                    ),
                   ],
                 ),
               ),
