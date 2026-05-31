@@ -71,7 +71,7 @@ class _PostCardBody extends StatelessWidget {
                   // instead of opening the read-only OtherProfileScreen.
                   onTap: () {
                     if (post.userId == currentUid) {
-                      context.read<ShellTabCubit>().switchToTab(4);
+                      context.read<ShellTabCubit>().switchToTab(3);
                     } else {
                       context.push('/profile/${post.userId}');
                     }
