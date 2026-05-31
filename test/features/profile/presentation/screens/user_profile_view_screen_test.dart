@@ -201,7 +201,7 @@ void main() {
         ),
       );
 
-      expect(find.widgetWithText(ElevatedButton, 'Follow'), findsWidgets);
+      expect(find.widgetWithText(FilledButton, 'Follow'), findsWidgets);
     });
 
     testWidgets(
@@ -310,7 +310,7 @@ void main() {
         ),
       );
 
-      expect(find.widgetWithText(ElevatedButton, 'Retry'), findsWidgets);
+      expect(find.widgetWithText(FilledButton, 'Retry'), findsWidgets);
     });
 
     testWidgets('dispatches FollowRequested when Follow button tapped',
@@ -337,7 +337,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Follow').first);
+      await tester.tap(find.widgetWithText(FilledButton, 'Follow').first);
       await tester.pump();
 
       verify(() => mockFollowBloc.add(any(

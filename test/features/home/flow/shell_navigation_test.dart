@@ -303,7 +303,7 @@ void main() {
           ),
         );
 
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         // Verify bell icon is visible
         expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
@@ -317,8 +317,8 @@ void main() {
     testWidgets(
       'UI-001 #11: badges update in real-time when stream emits new values',
       (WidgetTester tester) async {
-        final unreadCountController = StreamController<int>();
-        final unreadNotificationsController = StreamController<int>();
+        final unreadCountController = StreamController<int>.broadcast();
+        final unreadNotificationsController = StreamController<int>.broadcast();
 
         when(() => mockUnreadCountCubit.state).thenReturn(0);
         when(() => mockUnreadCountCubit.stream)
@@ -369,13 +369,14 @@ void main() {
           ),
         );
 
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         // Emit new values
         unreadCountController.add(5);
         unreadNotificationsController.add(7);
 
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump();
 
         // Verify badges updated with new values
         expect(find.text('5'), findsWidgets);
@@ -435,7 +436,7 @@ void main() {
           ),
         );
 
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         // Verify badge number is visible (99)
         expect(find.text('99'), findsWidgets,
