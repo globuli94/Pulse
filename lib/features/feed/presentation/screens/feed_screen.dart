@@ -63,6 +63,8 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/create-post'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         child: const Icon(Icons.add),
       ),
       body: BlocBuilder<PostsFeedBloc, PostsFeedState>(

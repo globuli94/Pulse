@@ -47,6 +47,8 @@ class ShellScreen extends StatelessWidget {
       builder: (context, currentIndex) {
         return Scaffold(
           appBar: AppBar(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
             title: Text(
               _tabTitles[currentIndex],
               style: TextStyle(
