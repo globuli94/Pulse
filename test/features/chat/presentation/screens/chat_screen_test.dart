@@ -174,5 +174,30 @@ void main() {
       final sendButton = find.byIcon(Icons.send);
       expect(sendButton, findsWidgets);
     });
+
+    testWidgets(
+        'UI-001 #4: shows circular avatar next to other user\'s messages',
+        (WidgetTester tester) async {
+      final now = DateTime.now();
+      final messages = [
+        Message(
+          id: 'msg1',
+          senderId: 'user2',
+          text: 'Hello from other user',
+          createdAt: now,
+        ),
+      ];
+
+      when(() => mockChatRepository.watchMessages('conv1'))
+          .thenAnswer((_) => Stream.value(messages));
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      // Check for CircleAvatar widget next to the message
+      final circleAvatarFinder = find.byType(CircleAvatar);
+      expect(circleAvatarFinder, findsWidgets,
+          reason: 'CircleAvatar should be present for other user messages');
+    });
   });
 }

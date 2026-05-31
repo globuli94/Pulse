@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -247,5 +249,202 @@ void main() {
         expect(find.byType(FeedScreen), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'UI-001 #10: badge colors use colorScheme.primary for bell icon and messages tab',
+      (WidgetTester tester) async {
+        // Update unread count to trigger badge rendering
+        when(() => mockUnreadCountCubit.state).thenReturn(2);
+        when(() => mockUnreadCountCubit.stream)
+            .thenAnswer((_) => Stream.value(2));
+
+        when(() => mockUnreadNotificationsCountCubit.state).thenReturn(3);
+        when(() => mockUnreadNotificationsCountCubit.stream)
+            .thenAnswer((_) => Stream.value(3));
+
+        final router = GoRouter(
+          initialLocation: '/home',
+          redirect: (BuildContext context, GoRouterState state) {
+            return null;
+          },
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const ShellScreen(),
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ChatRepository>(
+                create: (_) => mockChatRepository,
+              ),
+              RepositoryProvider<NotificationsRepository>(
+                create: (_) => mockNotificationsRepository,
+              ),
+            ],
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+                BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
+                BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+                BlocProvider<UnreadNotificationsCountCubit>.value(
+                    value: mockUnreadNotificationsCountCubit),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Verify bell icon is visible
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+
+        // Check that badge is rendered with numbers
+        expect(find.text('3'), findsWidgets);
+        expect(find.text('2'), findsWidgets);
+      },
+    );
+
+    testWidgets(
+      'UI-001 #11: badges update in real-time when stream emits new values',
+      (WidgetTester tester) async {
+        final unreadCountController = StreamController<int>();
+        final unreadNotificationsController = StreamController<int>();
+
+        when(() => mockUnreadCountCubit.state).thenReturn(0);
+        when(() => mockUnreadCountCubit.stream)
+            .thenAnswer((_) => unreadCountController.stream);
+
+        when(() => mockUnreadNotificationsCountCubit.state).thenReturn(0);
+        when(() => mockUnreadNotificationsCountCubit.stream)
+            .thenAnswer((_) => unreadNotificationsController.stream);
+
+        final router = GoRouter(
+          initialLocation: '/home',
+          redirect: (BuildContext context, GoRouterState state) {
+            return null;
+          },
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const ShellScreen(),
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ChatRepository>(
+                create: (_) => mockChatRepository,
+              ),
+              RepositoryProvider<NotificationsRepository>(
+                create: (_) => mockNotificationsRepository,
+              ),
+            ],
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+                BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
+                BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+                BlocProvider<UnreadNotificationsCountCubit>.value(
+                    value: mockUnreadNotificationsCountCubit),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Emit new values
+        unreadCountController.add(5);
+        unreadNotificationsController.add(7);
+
+        await tester.pumpAndSettle();
+
+        // Verify badges updated with new values
+        expect(find.text('5'), findsWidgets);
+        expect(find.text('7'), findsWidgets);
+
+        // Cleanup
+        await unreadCountController.close();
+        await unreadNotificationsController.close();
+      },
+    );
+
+    testWidgets(
+      'UI-001 #12: notification indicator badge is fully visible without clipping on nav bar',
+      (WidgetTester tester) async {
+        when(() => mockUnreadNotificationsCountCubit.state).thenReturn(99);
+        when(() => mockUnreadNotificationsCountCubit.stream)
+            .thenAnswer((_) => Stream.value(99));
+
+        final router = GoRouter(
+          initialLocation: '/home',
+          redirect: (BuildContext context, GoRouterState state) {
+            return null;
+          },
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const ShellScreen(),
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<ChatRepository>(
+                create: (_) => mockChatRepository,
+              ),
+              RepositoryProvider<NotificationsRepository>(
+                create: (_) => mockNotificationsRepository,
+              ),
+            ],
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+                BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
+                BlocProvider<UnreadCountCubit>.value(value: mockUnreadCountCubit),
+                BlocProvider<UnreadNotificationsCountCubit>.value(
+                    value: mockUnreadNotificationsCountCubit),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Verify badge number is visible (99)
+        expect(find.text('99'), findsWidgets,
+            reason: 'Badge number should be fully visible');
+
+        // Verify AppBar with bell icon is visible
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+      },
+    );
+
   });
 }

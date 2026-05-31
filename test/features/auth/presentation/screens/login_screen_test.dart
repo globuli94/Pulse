@@ -77,5 +77,26 @@ void main() {
 
       expect(find.text(errorMessage), findsOneWidget);
     });
+
+    testWidgets(
+        'UI-001 #14: company slogan "Feel connected. Stay in pulse." is displayed in primary color',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildScreen());
+
+      // Find the company slogan text
+      final sloganFinder = find.text('Feel connected. Stay in pulse.');
+      expect(sloganFinder, findsWidgets,
+          reason:
+              'Company slogan should be displayed below logo in primary color');
+
+      // Check if the text is in primary color
+      if (sloganFinder.evaluate().isNotEmpty) {
+        final textWidget = tester.widget<Text>(sloganFinder.first);
+        // The text should have primary color styling
+        final primaryColor =
+            Theme.of(tester.element(sloganFinder.first)).colorScheme.primary;
+        expect(textWidget.style?.color, equals(primaryColor));
+      }
+    });
   });
 }

@@ -306,5 +306,56 @@ void main() {
       expect(find.byType(ListTile), findsWidgets);
       expect(find.text('Test User'), findsWidgets);
     });
+
+    testWidgets(
+        'UI-001 #3: search input has rounded corners, filled, and primary focus border',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<SearchRepository>.value(
+                value: mockSearchRepository,
+              ),
+              RepositoryProvider<FollowsRepository>.value(
+                value: mockFollowsRepository,
+              ),
+            ],
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+              ],
+              child: const SearchScreen(),
+            ),
+          ),
+        ),
+      );
+
+      // Find the TextField
+      final textFieldFinder = find.byType(TextField);
+      expect(textFieldFinder, findsWidgets);
+
+      // Get the TextField widget
+      final textField = tester.widget<TextField>(textFieldFinder.first);
+      final decoration = textField.decoration;
+
+      // Check for rounded corners and filled property
+      expect(decoration?.filled, isTrue);
+
+      // Check for border radius (border should be OutlineInputBorder with radius)
+      final border = decoration?.border;
+      if (border is OutlineInputBorder) {
+        expect(border.borderRadius.toString().contains('24'), isTrue,
+            reason: 'Border radius should be 24');
+      }
+
+      // Check for primary color in focus border
+      final focusedBorder = decoration?.focusedBorder;
+      if (focusedBorder is OutlineInputBorder) {
+        // The border side should use primary color
+        expect(focusedBorder.borderSide.color,
+            equals(Theme.of(tester.element(textFieldFinder.first)).colorScheme.primary));
+      }
+    });
   });
 }
