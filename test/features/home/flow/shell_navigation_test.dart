@@ -85,7 +85,7 @@ void main() {
     });
 
     testWidgets(
-      'ShellScreen renders BottomNavigationBar with Feed and Profile tabs',
+      'ShellScreen renders BottomNavigationBar with exactly 4 tabs (Feed, Search, Messages, Profile)',
       (WidgetTester tester) async {
         final router = GoRouter(
           initialLocation: '/home',
@@ -131,15 +131,18 @@ void main() {
         // Verify BottomNavigationBar is present
         expect(find.byType(BottomNavigationBar), findsOneWidget);
 
-        // Verify "Feed" tab is present (appears in AppBar and BottomNavigationBar)
+        // Verify all 4 tab labels are present in the nav bar
         expect(find.text('Feed'), findsWidgets);
-
-        // Verify "Profile" tab is present
+        expect(find.text('Search'), findsWidgets);
+        expect(find.text('Messages'), findsWidgets);
         expect(find.text('Profile'), findsWidgets);
 
-        // Verify bell icon is visible on the AppBar (findsWidgets because
-        // Notifications tab in bottom nav also uses notifications_outlined icon)
-        expect(find.byIcon(Icons.notifications_outlined), findsWidgets);
+        // Verify "Notifications" tab does NOT exist (no label for it)
+        expect(find.text('Notifications'), findsNothing,
+            reason: 'Notifications tab should be removed from nav bar');
+
+        // Verify bell icon is visible on the AppBar only
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       },
     );
 
@@ -306,8 +309,8 @@ void main() {
 
         await tester.pump();
 
-        // Verify bell icon is visible (findsWidgets: AppBar bell + Notifications tab icon)
-        expect(find.byIcon(Icons.notifications_outlined), findsWidgets);
+        // Verify bell icon is visible on the AppBar
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
 
         // Check that badge is rendered with numbers
         expect(find.text('3'), findsWidgets);
@@ -443,8 +446,8 @@ void main() {
         expect(find.text('99'), findsWidgets,
             reason: 'Badge number should be fully visible');
 
-        // Verify AppBar with bell icon is visible (findsWidgets: AppBar bell + Notifications tab icon)
-        expect(find.byIcon(Icons.notifications_outlined), findsWidgets);
+        // Verify AppBar with bell icon is visible
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       },
     );
 
