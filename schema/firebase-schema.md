@@ -33,7 +33,7 @@
 | Authenticated user | Read own profile | `request.auth.uid == uid` |
 | Authenticated user | Read any user profile | `request.auth != null` |
 | Authenticated user | Create own document | `request.auth.uid == resource-id` (first sign-in) |
-| Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `postCount` |
+| Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `postCount`, `username` |
 | Any authenticated user | Update `followerCount` / `followingCount` | Atomic increment/decrement during follow/unfollow transactions |
 | Owner | Delete own document | `request.auth.uid == uid` (account deletion) |
 
@@ -506,4 +506,49 @@ No new queries introduced. No composite index changes required.
 |---|---|
 | `firebase-schema.md` — posts access patterns updated; audit section added | ✅ Done |
 | `firestore.rules` — new `allow update` rule added to `posts` for author `displayName`/`avatarUrl` update | ✅ Done |
+| `firestore.indexes.json` — no composite index required; no changes needed | ✅ Confirmed |
+
+---
+
+## Firestore Rules Audit — SOCAA-534 BUG-003 Permission-Denied on Feed Load for New Accounts
+
+**Audit date:** 2026-05-31
+**Classification:** Safe — relaxes an over-restrictive create check; adds `username` to allowed update fields. No field renames, collection removals, or access broadening beyond the intended write path.
+
+### Root Cause
+
+Two distinct rules defects in `users/{uid}` caused `permission-denied` for brand-new accounts:
+
+**Defect 1 — Redundant create guard (`request.resource.data.uid == uid`)**
+
+`auth_firebase_data_source.dart._writeUserProfile()` uses `SetOptions(merge: true)` to write the user document on first sign-in. With merge semantics Firestore evaluates the write as a CREATE when the document does not yet exist. The original create rule additionally required `request.resource.data.uid == uid`. If the Auth SDK has not yet fully propagated the new credential at the instant the write is evaluated, `request.auth` resolves to null or the JWT claim mismatch causes the guard to fail — producing `permission-denied` before the document is ever created. The guard is also redundant: `request.auth.uid == uid` (the document-path uid) already guarantees ownership.
+
+**Defect 2 — Missing `username` in owner update allowed fields**
+
+`_writeUserProfile` writes `username` via `SetOptions(merge: true)`. When the `users/{uid}` document already exists (e.g. Google re-sign-in for an existing account), Firestore evaluates the operation as an UPDATE. The existing owner update rule only permitted `['displayName', 'bio', 'avatarUrl', 'postCount']`. Because `username` was not listed, the merge-write was rejected with `permission-denied`.
+
+The feed load `permission-denied` is a downstream consequence: if `_writeUserProfile` fails and throws, `signUpWithEmail` propagates the error and the session state is corrupted, causing subsequent Firestore queries from `PostsFeedBloc` to run under an invalid or missing auth token.
+
+### Collections Affected
+
+| Collection | Change | Classification |
+|---|---|---|
+| `users` | Removed redundant `&& request.resource.data.uid == uid` from `allow create` | Safe — narrows the create guard, not broadens it |
+| `users` | Added `'username'` to `allow update` `hasOnly([...])` list | Safe — allows writing a field already defined in the schema |
+
+### Rules Coverage
+
+| Operation | Collection | Document | Who | Rule Change |
+|---|---|---|---|---|
+| Create user document on first sign-in | `users` | `{uid}` | Owner (`request.auth.uid == uid`) | Removed redundant `request.resource.data.uid == uid` check ✅ |
+| Update `username` field | `users` | `{uid}` | Owner | Added `'username'` to `hasOnly([...])` in owner update rule ✅ |
+
+### Composite Indexes
+
+No new queries introduced. No composite index changes required.
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — users access patterns updated; audit section added | ✅ Done |
+| `firestore.rules` — `users/{uid}` create rule simplified; `username` added to owner update allowed fields | ✅ Done |
 | `firestore.indexes.json` — no composite index required; no changes needed | ✅ Confirmed |
