@@ -125,11 +125,20 @@ class _NotificationBellButton extends StatelessWidget {
           onPressed: () => context.push('/notifications'),
         );
         if (unreadCount <= 0) return icon;
-        return Badge(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          textColor: Theme.of(context).colorScheme.onPrimary,
-          label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
-          child: icon,
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            icon,
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Badge(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                textColor: Theme.of(context).colorScheme.onPrimary,
+                label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+              ),
+            ),
+          ],
         );
       },
     );
