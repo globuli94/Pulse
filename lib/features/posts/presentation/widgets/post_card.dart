@@ -56,6 +56,7 @@ class _PostCardBody extends StatelessWidget {
     final isOwner = currentUid != null && currentUid == post.userId;
 
     return Card(
+      color: Colors.white,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -170,7 +171,7 @@ class _LikeButton extends StatelessWidget {
               icon: Icon(
                 isLiked ? Icons.favorite : Icons.favorite_border,
                 color: isLiked
-                    ? Theme.of(context).colorScheme.error
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               tooltip: isLiked ? 'Unlike' : 'Like',

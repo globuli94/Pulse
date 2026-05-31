@@ -153,6 +153,7 @@ class _ConversationTile extends StatelessWidget {
           'otherUserId': conversation.participantIds
               .firstWhere((id) => id != currentUserId, orElse: () => ''),
           'otherUserDisplayName': conversation.otherUserDisplayName,
+          'otherUserAvatarUrl': conversation.otherUserAvatarUrl,
           'currentUserId': currentUserId,
         },
       ),

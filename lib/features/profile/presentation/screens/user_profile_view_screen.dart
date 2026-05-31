@@ -74,7 +74,6 @@ class UserProfileViewScreen extends StatelessWidget {
                       Text(
                         profile.bio.isNotEmpty ? profile.bio : 'No bio yet.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontStyle: FontStyle.italic,
                               color: Colors.grey,
                             ),
                         textAlign: TextAlign.center,
@@ -121,7 +120,7 @@ class UserProfileViewScreen extends StatelessWidget {
                                   child: const Text('Unfollow'),
                                 );
                               } else {
-                                return ElevatedButton(
+                                return FilledButton(
                                   onPressed: () =>
                                       context.read<FollowBloc>().add(
                                             FollowRequested(
@@ -135,7 +134,7 @@ class UserProfileViewScreen extends StatelessWidget {
                             }
 
                             // FollowFailure — show a retry button.
-                            return ElevatedButton(
+                            return FilledButton(
                               onPressed: () =>
                                   context.read<FollowBloc>().add(
                                         FollowStatusCheckRequested(
@@ -148,7 +147,7 @@ class UserProfileViewScreen extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 8),
-                        OutlinedButton.icon(
+                        FilledButton.icon(
                           onPressed: () async {
                             final chatRepository =
                                 context.read<ChatRepository>();
@@ -165,6 +164,7 @@ class UserProfileViewScreen extends StatelessWidget {
                                   'otherUserId': viewedUid,
                                   'otherUserDisplayName':
                                       profile.displayName,
+                                  'otherUserAvatarUrl': profile.avatarUrl,
                                 },
                               );
                             }

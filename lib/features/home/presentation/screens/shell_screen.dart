@@ -42,7 +42,13 @@ class ShellScreen extends StatelessWidget {
       builder: (context, currentIndex) {
         return Scaffold(
           appBar: AppBar(
-            title: Text(_tabTitles[currentIndex]),
+            title: Text(
+              _tabTitles[currentIndex],
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             actions: const [_NotificationBellButton()],
           ),
           body: IndexedStack(
@@ -110,6 +116,8 @@ class _NotificationBellButton extends StatelessWidget {
         );
         if (unreadCount <= 0) return icon;
         return Badge(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          textColor: Theme.of(context).colorScheme.onPrimary,
           label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
           child: icon,
         );
@@ -130,9 +138,32 @@ class _ChatTabIcon extends StatelessWidget {
     final icon = Icon(active ? Icons.chat : Icons.chat_outlined);
     if (unreadCount <= 0) return icon;
 
-    return Badge(
-      label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
-      child: icon,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        icon,
+        Positioned(
+          top: -6,
+          right: -10,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              unreadCount > 99 ? '99+' : '$unreadCount',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

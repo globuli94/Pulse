@@ -184,6 +184,8 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
           final otherUserId = extra['otherUserId'] as String? ?? '';
           final otherUserDisplayName =
               extra['otherUserDisplayName'] as String? ?? '';
+          final otherUserAvatarUrl =
+              extra['otherUserAvatarUrl'] as String?;
           return BlocProvider<ChatBloc>(
             create: (_) => ChatBloc(
               repository: context.read<ChatRepository>(),
@@ -193,6 +195,7 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
               currentUserId: currentUserId,
               otherUserId: otherUserId,
               otherUserDisplayName: otherUserDisplayName,
+              otherUserAvatarUrl: otherUserAvatarUrl,
             ),
           );
         },

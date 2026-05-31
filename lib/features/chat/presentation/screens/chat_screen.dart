@@ -24,6 +24,7 @@ class ChatScreen extends StatefulWidget {
     required this.currentUserId,
     required this.otherUserId,
     required this.otherUserDisplayName,
+    this.otherUserAvatarUrl,
   });
 
   /// ID of the conversation being viewed.
@@ -37,6 +38,9 @@ class ChatScreen extends StatefulWidget {
 
   /// Display name of the other participant shown in the AppBar.
   final String otherUserDisplayName;
+
+  /// Avatar URL of the other participant; null if not set.
+  final String? otherUserAvatarUrl;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -78,7 +82,14 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.otherUserDisplayName)),
+      appBar: AppBar(
+        title: Text(
+          widget.otherUserDisplayName,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -121,9 +132,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: state.messages.length,
                     itemBuilder: (context, index) {
                       final message = state.messages[index];
+                      final isOwn = message.senderId == widget.currentUserId;
                       return _MessageBubble(
                         message: message,
-                        isOwn: message.senderId == widget.currentUserId,
+                        isOwn: isOwn,
+                        otherUserAvatarUrl:
+                            isOwn ? null : widget.otherUserAvatarUrl,
+                        otherUserDisplayName: widget.otherUserDisplayName,
                       );
                     },
                   );
@@ -145,37 +160,71 @@ class _ChatScreenState extends State<ChatScreen> {
 
 /// A single message bubble aligned left (theirs) or right (own).
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isOwn});
+  const _MessageBubble({
+    required this.message,
+    required this.isOwn,
+    required this.otherUserDisplayName,
+    this.otherUserAvatarUrl,
+  });
 
   final Message message;
   final bool isOwn;
+  final String otherUserDisplayName;
+  final String? otherUserAvatarUrl;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bubble = Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.65,
+      ),
+      decoration: BoxDecoration(
+        color: isOwn ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isOwn ? 16 : 4),
+          bottomRight: Radius.circular(isOwn ? 4 : 16),
+        ),
+      ),
+      child: Text(
+        message.text,
+        style: TextStyle(
+          color: isOwn ? colorScheme.onPrimary : colorScheme.onSurface,
+        ),
+      ),
+    );
+
+    if (isOwn) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: bubble,
+      );
+    }
+
+    final initial = otherUserDisplayName.isNotEmpty
+        ? otherUserDisplayName[0].toUpperCase()
+        : '?';
+    final avatar = CircleAvatar(
+      radius: 16,
+      backgroundImage:
+          otherUserAvatarUrl != null ? NetworkImage(otherUserAvatarUrl!) : null,
+      child: otherUserAvatarUrl == null ? Text(initial) : null,
+    );
+
     return Align(
-      alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.72,
-        ),
-        decoration: BoxDecoration(
-          color: isOwn ? colorScheme.primary : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isOwn ? 16 : 4),
-            bottomRight: Radius.circular(isOwn ? 4 : 16),
-          ),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: isOwn ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
-        ),
+      alignment: Alignment.centerLeft,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          avatar,
+          const SizedBox(width: 6),
+          bubble,
+        ],
       ),
     );
   }
