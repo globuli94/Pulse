@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -14,6 +16,11 @@ void main() {
 
     setUp(() {
       mockPostsRepository = MockPostsRepository();
+      when(() => mockPostsRepository.watchIsLiked(
+            postId: any(named: 'postId'), userId: any(named: 'userId')))
+          .thenAnswer((_) => const Stream.empty());
+      when(() => mockPostsRepository.watchLikeCount(any()))
+          .thenAnswer((_) => const Stream.empty());
     });
 
     test('initial state is LikeInitial', () {
@@ -21,64 +28,93 @@ void main() {
       expect(bloc.state, isA<LikeInitial>());
     });
 
-    blocTest<LikeBloc, LikeState>(
-      'LikeInitialised emits [LikeLoading, LikeLoaded(isLiked: false, likeCount: 3)]',
-      build: () {
-        when(() => mockPostsRepository.isLiked(
-              postId: 'p1',
-              userId: 'u1',
-            )).thenAnswer((_) async => false);
-        return LikeBloc(repository: mockPostsRepository);
-      },
-      act: (bloc) => bloc.add(
-        LikeInitialised(postId: 'p1', userId: 'u1', initialLikeCount: 3),
-      ),
-      expect: () => [
-        isA<LikeLoading>(),
-        isA<LikeLoaded>()
-            .having((state) => state.isLiked, 'isLiked', false)
-            .having((state) => state.likeCount, 'likeCount', 3),
-      ],
-    );
+    test('LikeInitialised: emits LikeLoading then LikeLoaded when streams emit', () async {
+      final isLikedCtrl = StreamController<bool>.broadcast();
+      final countCtrl = StreamController<int>.broadcast();
 
-    blocTest<LikeBloc, LikeState>(
-      'LikeInitialised emits [LikeLoading, LikeLoaded(isLiked: true, likeCount: 5)]',
-      build: () {
-        when(() => mockPostsRepository.isLiked(
-              postId: 'p1',
-              userId: 'u1',
-            )).thenAnswer((_) async => true);
-        return LikeBloc(repository: mockPostsRepository);
-      },
-      act: (bloc) => bloc.add(
-        LikeInitialised(postId: 'p1', userId: 'u1', initialLikeCount: 5),
-      ),
-      expect: () => [
-        isA<LikeLoading>(),
-        isA<LikeLoaded>()
-            .having((state) => state.isLiked, 'isLiked', true)
-            .having((state) => state.likeCount, 'likeCount', 5),
-      ],
-    );
+      when(() => mockPostsRepository.watchIsLiked(postId: 'p1', userId: 'u1'))
+          .thenAnswer((_) => isLikedCtrl.stream);
+      when(() => mockPostsRepository.watchLikeCount('p1'))
+          .thenAnswer((_) => countCtrl.stream);
 
-    blocTest<LikeBloc, LikeState>(
-      'LikeInitialised emits [LikeLoading, LikeError] when isLiked throws',
-      build: () {
-        when(() => mockPostsRepository.isLiked(
-              postId: 'p1',
-              userId: 'u1',
-            )).thenThrow(Exception('Network error'));
-        return LikeBloc(repository: mockPostsRepository);
-      },
-      act: (bloc) => bloc.add(
-        LikeInitialised(postId: 'p1', userId: 'u1', initialLikeCount: 0),
-      ),
-      expect: () => [
+      final bloc = LikeBloc(repository: mockPostsRepository);
+      final states = <LikeState>[];
+      final sub = bloc.stream.listen(states.add);
+
+      bloc.add(LikeInitialised(postId: 'p1', userId: 'u1', initialLikeCount: 3));
+      await Future<void>.delayed(Duration.zero);
+      expect(states, [isA<LikeLoading>()]);
+
+      isLikedCtrl.add(false);
+      await Future<void>.delayed(Duration.zero);
+      expect(states.last, isA<LikeLoaded>()
+          .having((s) => s.isLiked, 'isLiked', false)
+          .having((s) => s.likeCount, 'likeCount', 3));
+
+      countCtrl.add(7);
+      await Future<void>.delayed(Duration.zero);
+      expect(states.last, isA<LikeLoaded>()
+          .having((s) => s.isLiked, 'isLiked', false)
+          .having((s) => s.likeCount, 'likeCount', 7));
+
+      await sub.cancel();
+      await bloc.close();
+      await isLikedCtrl.close();
+      await countCtrl.close();
+    });
+
+    test('LikeInitialised: external like change on another screen updates state', () async {
+      final isLikedCtrl = StreamController<bool>.broadcast();
+      final countCtrl = StreamController<int>.broadcast();
+
+      when(() => mockPostsRepository.watchIsLiked(postId: 'p1', userId: 'u1'))
+          .thenAnswer((_) => isLikedCtrl.stream);
+      when(() => mockPostsRepository.watchLikeCount('p1'))
+          .thenAnswer((_) => countCtrl.stream);
+
+      final bloc = LikeBloc(repository: mockPostsRepository);
+      bloc.add(LikeInitialised(postId: 'p1', userId: 'u1', initialLikeCount: 2));
+      await Future<void>.delayed(Duration.zero);
+
+      isLikedCtrl.add(false);
+      await Future<void>.delayed(Duration.zero);
+      expect((bloc.state as LikeLoaded).isLiked, false);
+
+      // Simulate like from another screen
+      isLikedCtrl.add(true);
+      countCtrl.add(3);
+      await Future<void>.delayed(Duration.zero);
+
+      expect((bloc.state as LikeLoaded).isLiked, true);
+      expect((bloc.state as LikeLoaded).likeCount, 3);
+
+      await bloc.close();
+      await isLikedCtrl.close();
+      await countCtrl.close();
+    });
+
+    test('LikeInitialised: stream error emits LikeError', () async {
+      when(() => mockPostsRepository.watchIsLiked(postId: 'p1', userId: 'u1'))
+          .thenAnswer((_) => Stream.error(Exception('Network error')));
+      when(() => mockPostsRepository.watchLikeCount('p1'))
+          .thenAnswer((_) => const Stream.empty());
+
+      final bloc = LikeBloc(repository: mockPostsRepository);
+      final states = <LikeState>[];
+      final sub = bloc.stream.listen(states.add);
+
+      bloc.add(LikeInitialised(postId: 'p1', userId: 'u1', initialLikeCount: 0));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(states, [
         isA<LikeLoading>(),
         isA<LikeError>()
-            .having((state) => state.message, 'message', contains('Network error')),
-      ],
-    );
+            .having((s) => s.message, 'message', contains('Network error')),
+      ]);
+
+      await sub.cancel();
+      await bloc.close();
+    });
 
     blocTest<LikeBloc, LikeState>(
       'LikeToggleRequested like: emits [LikeLoaded(isLiked: true, likeCount: 4)]',

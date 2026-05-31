@@ -39,11 +39,17 @@ void main() {
       mockAuthBloc = MockAuthBloc();
       mockPostsRepository = MockPostsRepository();
 
-      // Stub isLiked to prevent async errors in PostCard initialisation
+      // Stub like-related methods to prevent async errors in PostCard initialisation
       when(() => mockPostsRepository.isLiked(
             postId: any(named: 'postId'),
             userId: any(named: 'userId'),
           )).thenAnswer((_) async => false);
+      when(() => mockPostsRepository.watchIsLiked(
+            postId: any(named: 'postId'),
+            userId: any(named: 'userId'),
+          )).thenAnswer((_) => Stream.value(false));
+      when(() => mockPostsRepository.watchLikeCount(any()))
+          .thenAnswer((_) => const Stream.empty());
 
       // Mock authenticated user
       final testUser = AppUser(

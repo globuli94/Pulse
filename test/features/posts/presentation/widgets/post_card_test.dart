@@ -33,6 +33,12 @@ void main() {
       final mockUser = AppUser(uid: 'current-user', email: 'test@example.com', displayName: 'Test User');
       when(() => mockAuthBloc.state).thenReturn(Authenticated(mockUser));
       when(() => mockAuthBloc.stream).thenAnswer((_) => const Stream.empty());
+      when(() => mockPostsRepository.watchIsLiked(
+            postId: any(named: 'postId'),
+            userId: any(named: 'userId'),
+          )).thenAnswer((_) => Stream.value(false));
+      when(() => mockPostsRepository.watchLikeCount(any()))
+          .thenAnswer((_) => const Stream.empty());
     });
 
     Widget buildCard(Post post) {
@@ -225,6 +231,10 @@ void main() {
               postId: '1',
               userId: 'current-user',
             )).thenAnswer((_) async => true);
+        when(() => mockPostsRepository.watchIsLiked(
+              postId: '1',
+              userId: 'current-user',
+            )).thenAnswer((_) => Stream.value(true));
 
         await tester.pumpWidget(buildPostCard(post, mockPostsRepository, mockAuthBloc));
         await tester.pumpAndSettle();
@@ -289,6 +299,10 @@ void main() {
               postId: '1',
               userId: 'current-user',
             )).thenAnswer((_) async => true);
+        when(() => mockPostsRepository.watchIsLiked(
+              postId: '1',
+              userId: 'current-user',
+            )).thenAnswer((_) => Stream.value(true));
 
         when(() => mockPostsRepository.unlikePost(
               postId: '1',
@@ -361,6 +375,10 @@ void main() {
               postId: '1',
               userId: 'current-user',
             )).thenAnswer((_) async => true);
+        when(() => mockPostsRepository.watchIsLiked(
+              postId: '1',
+              userId: 'current-user',
+            )).thenAnswer((_) => Stream.value(true));
 
         await tester.pumpWidget(buildPostCard(post, mockPostsRepository, mockAuthBloc));
         await tester.pumpAndSettle();
