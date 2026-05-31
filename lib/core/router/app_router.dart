@@ -29,6 +29,7 @@ import '../../features/posts/presentation/screens/create_post_screen.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/presentation/bloc/followers_bloc.dart';
 import '../../features/profile/presentation/bloc/following_bloc.dart';
+import '../../features/profile/presentation/bloc/profile_posts_bloc.dart';
 import '../../features/profile/presentation/bloc/user_profile_bloc.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/followers_screen.dart';
@@ -128,6 +129,11 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
                     followerId: currentUserId,
                     followeeId: uid,
                   )),
+              ),
+              BlocProvider<ProfilePostsBloc>(
+                create: (_) => ProfilePostsBloc(
+                  postsRepository: context.read<PostsRepository>(),
+                )..add(ProfilePostsSubscriptionRequested(uid: uid)),
               ),
             ],
             child: UserProfileViewScreen(

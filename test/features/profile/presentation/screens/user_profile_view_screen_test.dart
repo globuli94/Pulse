@@ -9,6 +9,7 @@ import 'package:pulse/features/chat/domain/entities/message.dart';
 import 'package:pulse/features/chat/domain/repositories/chat_repository.dart';
 import 'package:pulse/features/follows/presentation/bloc/follow_bloc.dart';
 import 'package:pulse/features/profile/domain/entities/user_profile.dart';
+import 'package:pulse/features/profile/presentation/bloc/profile_posts_bloc.dart';
 import 'package:pulse/features/profile/presentation/bloc/user_profile_bloc.dart';
 import 'package:pulse/features/profile/presentation/screens/user_profile_view_screen.dart';
 
@@ -17,6 +18,9 @@ class MockUserProfileBloc extends MockBloc<UserProfileEvent, UserProfileState>
 
 class MockFollowBloc extends MockBloc<FollowEvent, FollowState>
     implements FollowBloc {}
+
+class MockProfilePostsBloc extends MockBloc<ProfilePostsEvent, ProfilePostsState>
+    implements ProfilePostsBloc {}
 
 class MockChatRepository extends Mock implements ChatRepository {
   @override
@@ -54,6 +58,7 @@ class MockChatRepository extends Mock implements ChatRepository {
 void main() {
   late MockUserProfileBloc mockUserProfileBloc;
   late MockFollowBloc mockFollowBloc;
+  late MockProfilePostsBloc mockProfilePostsBloc;
   late MockChatRepository mockChatRepository;
 
   setUpAll(() {
@@ -66,6 +71,7 @@ void main() {
   setUp(() {
     mockUserProfileBloc = MockUserProfileBloc();
     mockFollowBloc = MockFollowBloc();
+    mockProfilePostsBloc = MockProfilePostsBloc();
     mockChatRepository = MockChatRepository();
     // Ensure the mock blocs have proper initial states
     whenListen(
@@ -77,6 +83,11 @@ void main() {
       mockFollowBloc,
       Stream.value(const FollowInitial()),
       initialState: const FollowInitial(),
+    );
+    whenListen(
+      mockProfilePostsBloc,
+      Stream.value(const ProfilePostsInitial()),
+      initialState: const ProfilePostsInitial(),
     );
   });
 
@@ -92,6 +103,7 @@ void main() {
         providers: [
           BlocProvider<UserProfileBloc>.value(value: mockUserProfileBloc),
           BlocProvider<FollowBloc>.value(value: mockFollowBloc),
+          BlocProvider<ProfilePostsBloc>.value(value: mockProfilePostsBloc),
         ],
         child: MaterialApp(
           home: UserProfileViewScreen(
@@ -381,7 +393,7 @@ void main() {
           .called(1);
     });
 
-    testWidgets('renders content inside SingleChildScrollView when loaded',
+    testWidgets('renders content inside CustomScrollView when loaded',
         (WidgetTester tester) async {
       final profile = UserProfile(
         uid: 'other-uid',
@@ -397,6 +409,8 @@ void main() {
           .thenReturn(UserProfileLoaded(profile));
       when(() => mockFollowBloc.state)
           .thenReturn(const FollowLoaded(isFollowing: false));
+      when(() => mockProfilePostsBloc.state)
+          .thenReturn(const ProfilePostsInitial());
 
       await tester.pumpWidget(
         createWidgetUnderTest(
@@ -405,7 +419,78 @@ void main() {
         ),
       );
 
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.byType(CustomScrollView), findsOneWidget);
+    });
+
+    testWidgets('shows CircularProgressIndicator when ProfilePostsLoading',
+        (WidgetTester tester) async {
+      final profile = UserProfile(
+        uid: 'other-uid',
+        displayName: 'Poster User',
+        bio: '',
+        avatarUrl: null,
+        postCount: 0,
+        followerCount: 0,
+        followingCount: 0,
+      );
+
+      when(() => mockUserProfileBloc.state).thenReturn(UserProfileLoaded(profile));
+      when(() => mockFollowBloc.state).thenReturn(const FollowLoaded(isFollowing: false));
+      when(() => mockProfilePostsBloc.state).thenReturn(const ProfilePostsLoading());
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(viewedUid: 'other-uid', currentUserId: 'current-uid'),
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+    });
+
+    testWidgets('shows "No posts yet." when ProfilePostsLoaded with empty list',
+        (WidgetTester tester) async {
+      final profile = UserProfile(
+        uid: 'other-uid',
+        displayName: 'Empty Poster',
+        bio: '',
+        avatarUrl: null,
+        postCount: 0,
+        followerCount: 0,
+        followingCount: 0,
+      );
+
+      when(() => mockUserProfileBloc.state).thenReturn(UserProfileLoaded(profile));
+      when(() => mockFollowBloc.state).thenReturn(const FollowLoaded(isFollowing: false));
+      when(() => mockProfilePostsBloc.state)
+          .thenReturn(const ProfilePostsLoaded(posts: []));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(viewedUid: 'other-uid', currentUserId: 'current-uid'),
+      );
+
+      expect(find.text('No posts yet.'), findsOneWidget);
+    });
+
+    testWidgets('shows error message when ProfilePostsError',
+        (WidgetTester tester) async {
+      final profile = UserProfile(
+        uid: 'other-uid',
+        displayName: 'Error User',
+        bio: '',
+        avatarUrl: null,
+        postCount: 0,
+        followerCount: 0,
+        followingCount: 0,
+      );
+
+      when(() => mockUserProfileBloc.state).thenReturn(UserProfileLoaded(profile));
+      when(() => mockFollowBloc.state).thenReturn(const FollowLoaded(isFollowing: false));
+      when(() => mockProfilePostsBloc.state)
+          .thenReturn(const ProfilePostsError(message: 'Failed to load posts'));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(viewedUid: 'other-uid', currentUserId: 'current-uid'),
+      );
+
+      expect(find.text('Failed to load posts'), findsOneWidget);
     });
   });
 }
