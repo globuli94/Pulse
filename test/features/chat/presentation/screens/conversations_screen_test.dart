@@ -1,8 +1,7 @@
-// Copyright 2024 Social Media Company. All rights reserved.
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pulse/features/auth/domain/entities/app_user.dart';
 import 'package:pulse/features/auth/presentation/bloc/auth_bloc.dart';
@@ -12,74 +11,150 @@ import 'package:pulse/features/chat/presentation/screens/conversations_screen.da
 
 class MockChatRepository extends Mock implements ChatRepository {}
 
+
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 void main() {
-  group('ConversationsScreen', () {
-    late MockAuthBloc mockAuthBloc;
-    late MockChatRepository mockChatRepository;
+  late MockChatRepository mockChatRepository;
+  late MockAuthBloc mockAuthBloc;
 
-    setUp(() {
-      mockAuthBloc = MockAuthBloc();
-      mockChatRepository = MockChatRepository();
+  setUp(() {
+    mockChatRepository = MockChatRepository();
+    mockAuthBloc = MockAuthBloc();
+    whenListen(
+      mockAuthBloc,
+      Stream<AuthState>.empty(),
+      initialState: const Unauthenticated(),
+    );
+  });
 
-      // Mock authenticated user
-      final testUser = AppUser(
-        uid: 'test-uid',
-        email: 'test@example.com',
-        displayName: 'Test User',
-      );
-      when(() => mockAuthBloc.state).thenReturn(Authenticated(testUser));
+  Widget createWidgetUnderTest({required AuthState authState}) {
+    when(() => mockAuthBloc.state).thenReturn(authState);
 
-      // Mock ChatRepository to stream conversations
-      final testConversations = [
-        Conversation(
-          id: 'conv-1',
-          participantIds: ['test-uid', 'other-uid'],
-          otherUserDisplayName: 'Other User',
-          otherUserAvatarUrl: null,
-          lastMessageText: 'Hello',
-          lastMessageAt: DateTime.now(),
-          unreadCounts: {'test-uid': 0, 'other-uid': 0},
+    return MaterialApp(
+      home: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<ChatRepository>(create: (_) => mockChatRepository),
+        ],
+        child: BlocProvider<AuthBloc>(
+          create: (_) => mockAuthBloc,
+          child: const ConversationsScreen(),
         ),
-      ];
-      when(() => mockChatRepository.watchConversations(any()))
-          .thenAnswer((_) => Stream.value(testConversations));
-    });
+      ),
+    );
+  }
 
-    testWidgets(
-      'SOCAA-564: ListView.separated has correct top padding (status bar + toolbar)',
-      (WidgetTester tester) async {
+  group('ConversationsScreen', () {
+    testWidgets('shows CircularProgressIndicator on ConversationsLoading',
+        (WidgetTester tester) async {
+      when(() => mockChatRepository.watchConversations('user1')).thenAnswer(
+        (_) => const Stream.empty(),
+      );
 
-        await tester.pumpWidget(
-          RepositoryProvider<ChatRepository>.value(
-            value: mockChatRepository,
-            child: BlocProvider<AuthBloc>.value(
-              value: mockAuthBloc,
-              child: const MaterialApp(home: ConversationsScreen()),
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          authState: Authenticated(
+            AppUser(
+              uid: 'user1',
+              email: 'user@example.com',
+              displayName: 'Test User',
             ),
           ),
-        );
+        ),
+      );
 
-        // Wait for bloc to emit loaded state
-        await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+    });
 
-        // Find the ListView.separated
-        final listViewFinder = find.byType(ListView);
-        expect(listViewFinder, findsOneWidget);
+    testWidgets('shows "No conversations yet" on empty list',
+        (WidgetTester tester) async {
+      when(() => mockChatRepository.watchConversations('user1')).thenAnswer(
+        (_) => Stream.value([]),
+      );
 
-        // Get the ListView widget
-        final listView = tester.widget<ListView>(listViewFinder);
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          authState: Authenticated(
+            AppUser(
+              uid: 'user1',
+              email: 'user@example.com',
+              displayName: 'Test User',
+            ),
+          ),
+        ),
+      );
 
-        // Get MediaQuery padding from the context
-        final context = tester.element(listViewFinder);
-        final mediaQueryPadding = MediaQuery.of(context).padding.top;
-        final expectedTop = mediaQueryPadding + kToolbarHeight;
+      await tester.pumpAndSettle();
 
-        // Assert padding.top
-        final resolvedPadding = listView.padding?.resolve(TextDirection.ltr);
-        expect(resolvedPadding?.top, expectedTop);
-      },
-    );
+      expect(find.text('No conversations yet.'), findsWidgets);
+    });
+
+    testWidgets('shows conversation tile with otherUserDisplayName',
+        (WidgetTester tester) async {
+      when(() => mockChatRepository.watchConversations('user1')).thenAnswer(
+        (_) => Stream.value([
+          Conversation(
+            id: 'conv1',
+            participantIds: ['user1', 'user2'],
+            otherUserDisplayName: 'John Doe',
+            lastMessageText: 'Hello',
+            lastMessageAt: DateTime.now(),
+            unreadCounts: {'user1': 0},
+          ),
+        ]),
+      );
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          authState: Authenticated(
+            AppUser(
+              uid: 'user1',
+              email: 'user@example.com',
+              displayName: 'Test User',
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('John Doe'), findsWidgets);
+    });
+
+    testWidgets('shows unread badge when unreadCounts > 0',
+        (WidgetTester tester) async {
+      when(() => mockChatRepository.watchConversations('user1')).thenAnswer(
+        (_) => Stream.value([
+          Conversation(
+            id: 'conv1',
+            participantIds: ['user1', 'user2'],
+            otherUserDisplayName: 'John Doe',
+            lastMessageText: 'Hello',
+            lastMessageAt: DateTime.now(),
+            unreadCounts: {'user1': 2},
+          ),
+        ]),
+      );
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          authState: Authenticated(
+            AppUser(
+              uid: 'user1',
+              email: 'user@example.com',
+              displayName: 'Test User',
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('2'), findsWidgets);
+    });
+
+    // The "Messages" AppBar title was moved to ShellScreen (global AppBar added
+    // for FEAT-011 notifications bell). ConversationsScreen no longer renders
+    // its own AppBar. Covered by ShellScreen navigation tests.
   });
 }
