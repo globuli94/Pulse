@@ -14,4 +14,9 @@ abstract class NotificationsRepository {
 
   /// Marks a single notification as read.
   Future<void> markAsRead({required String notificationId});
+
+  /// Stream of the actor's current profile picture URL from `users/{actorId}`.
+  ///
+  /// Emits `null` when the actor has no photo.
+  Stream<String?> watchActorPhotoUrl({required String actorId});
 }

@@ -15,10 +15,12 @@ class NotificationTile extends StatelessWidget {
   const NotificationTile({
     super.key,
     required this.notification,
+    required this.actorPhotoUrlStream,
     required this.onTap,
   });
 
   final NotificationItem notification;
+  final Stream<String?> actorPhotoUrlStream;
   final VoidCallback onTap;
 
   @override
@@ -34,17 +36,22 @@ class NotificationTile extends StatelessWidget {
               .colorScheme
               .primaryContainer
               .withValues(alpha: 0.15),
-      leading: CircleAvatar(
-        backgroundImage: notification.actorPhotoUrl != null
-            ? NetworkImage(notification.actorPhotoUrl!)
-            : null,
-        child: notification.actorPhotoUrl == null
-            ? Text(
-                notification.actorDisplayName.isNotEmpty
-                    ? notification.actorDisplayName[0].toUpperCase()
-                    : '?',
-              )
-            : null,
+      leading: StreamBuilder<String?>(
+        stream: actorPhotoUrlStream,
+        builder: (context, snapshot) {
+          final photoUrl = snapshot.data;
+          return CircleAvatar(
+            backgroundImage:
+                photoUrl != null ? NetworkImage(photoUrl) : null,
+            child: photoUrl == null
+                ? Text(
+                    notification.actorDisplayName.isNotEmpty
+                        ? notification.actorDisplayName[0].toUpperCase()
+                        : '?',
+                  )
+                : null,
+          );
+        },
       ),
       title: Text(text),
       subtitle: Text(_formatTime(notification.createdAt)),

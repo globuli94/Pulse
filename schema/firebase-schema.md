@@ -2,7 +2,7 @@
 
 **Project:** Pulse
 **Classification:** Safe — rules tighten access (unauthenticated blocked); no field renames or removals.
-**Last updated:** 2026-05-25
+**Last updated:** 2026-06-01
 
 ---
 
@@ -148,9 +148,8 @@ All lookups are single-document reads using the composite key `{userId}_{postId}
 | `id` | string | required | Equals the document ID; stored redundantly for client convenience |
 | `userId` | string | required | Firebase Auth UID of the recipient (post owner or followed user) |
 | `type` | string | required | Event type: `'like'` or `'follow'` |
-| `actorId` | string | required | Firebase Auth UID of the user who triggered the event |
+| `actorId` | string | required | Firebase Auth UID of the user who triggered the event; used by the UI to join `users/{actorId}` at read time to fetch the actor's current `avatarUrl` |
 | `actorDisplayName` | string | required | Display name of the actor captured at event time |
-| `actorPhotoUrl` | string | optional | Avatar URL of the actor at event time; null if no avatar |
 | `postId` | string | optional | ID of the liked post; only present when `type == 'like'`; null for follow notifications |
 | `isRead` | boolean | required | `false` on creation; set to `true` by the recipient when they view the notification |
 | `createdAt` | timestamp | required | Server timestamp set on creation |
@@ -552,3 +551,54 @@ No new queries introduced. No composite index changes required.
 | `firebase-schema.md` — users access patterns updated; audit section added | ✅ Done |
 | `firestore.rules` — `users/{uid}` create rule simplified; `username` added to owner update allowed fields | ✅ Done |
 | `firestore.indexes.json` — no composite index required; no changes needed | ✅ Confirmed |
+
+---
+
+## Firestore Rules Audit — SOCAA-576 BUG-016 Remove Snapshot avatarUrl from Notification Documents
+
+**Audit date:** 2026-06-01
+**Classification:** BREAKING — removes `actorPhotoUrl` field from notification document definition. Any existing code reading `notification.actorPhotoUrl` must be updated (Flutter IMPL ticket handles the client-side change).
+
+### Root Cause
+
+Notification documents stored `actorPhotoUrl` as a snapshot at write time (captured from `users/{actorId}.photoUrl` when the notification was created). Two problems:
+
+1. **Wrong field name at write time:** The write path read `actorData['photoUrl']` but the `users` collection stores the avatar as `avatarUrl`. The mismatch meant `actorPhotoUrl` was always `null` in practice.
+2. **Stale snapshot:** Even if the field name were correct, the snapshot would go stale whenever the actor updates their profile picture. The correct pattern is a UI-side join: read `users/{actorId}.avatarUrl` at display time.
+
+### Collections Affected
+
+| Collection | Change | Classification |
+|---|---|---|
+| `notifications` | **BREAKING** — `actorPhotoUrl` field removed | UI must join `users/{actorId}` at read time instead of reading a snapshot field |
+
+**Migration path:** No Firestore migration is required — the field was always `null` in practice due to the wrong source field name. New notification documents will not include `actorPhotoUrl`. Existing documents that happen to have the field will simply have an unused field; they do not need to be backfilled or deleted.
+
+### `actorId` Verification
+
+`actorId` is present and correctly stored on all notification documents:
+- Follow notifications: `follows_firebase_data_source.dart` stores `actorId: followerId` ✅
+- Like notifications: `posts_firebase_data_source.dart` stores `actorId: userId` ✅
+
+The UI must join `users/{actorId}` at read time to display the actor's current `avatarUrl`.
+
+### Rules Coverage
+
+| Operation | Collection | Document | Who | Rule |
+|---|---|---|---|---|
+| Read notifications | `notifications` | `{notificationId}` | Recipient owner | `allow read` when `request.auth.uid == resource.data.userId` ✅ — no change needed |
+| Write notification | `notifications` | `{notificationId}` | Any authenticated actor | `allow create` when `request.auth != null` ✅ — no change needed |
+| Update `isRead` | `notifications` | `{notificationId}` | Recipient owner | `allow update` scoped to `['isRead']` ✅ — no change needed |
+| Read actor profile | `users` | `{actorId}` | Any authenticated user | `allow read: if request.auth != null` ✅ — already covered |
+
+**No changes to `schema/firestore.rules` are required.** The rules never referenced `actorPhotoUrl`, and the `users` read rule already covers the UI-side `users/{actorId}` join.
+
+### Composite Index Determination
+
+The notification queries remain unchanged (flat `notifications` collection, `userId` equality filter + `createdAt DESC` orderBy, and `userId` + `isRead` filter). Both composite indexes already in `firestore.indexes.json` are still required and correct. **No changes to `firestore.indexes.json`.**
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — `actorPhotoUrl` removed from notifications field table; `actorId` join note added | ✅ Done |
+| `schema/firestore.rules` — no changes required; rules confirmed consistent with `actorId`-only pattern | ✅ Confirmed |
+| `firestore.indexes.json` — existing composite indexes unchanged; no new index required | ✅ Confirmed |

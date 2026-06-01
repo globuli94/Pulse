@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:pulse/features/notifications/domain/entities/notification_item.dart';
 import 'package:pulse/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:pulse/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:pulse/features/notifications/presentation/screens/notifications_screen.dart';
@@ -25,6 +26,8 @@ void main() {
     setUp(() {
       mockBloc = MockNotificationsBloc();
       mockRepository = MockNotificationsRepository();
+      when(() => mockRepository.watchActorPhotoUrl(actorId: any(named: 'actorId')))
+          .thenAnswer((_) => const Stream.empty());
     });
 
     testWidgets(
@@ -94,6 +97,55 @@ void main() {
         );
 
         expect(find.text('No notifications yet.'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'tile shows actor photo when watchActorPhotoUrl emits a URL',
+      (WidgetTester tester) async {
+        final testNotifications = [
+          NotificationItem(
+            id: '1',
+            userId: 'test-user',
+            type: 'like',
+            actorId: 'actor-1',
+            actorDisplayName: 'Alice',
+            postId: 'post-1',
+            isRead: false,
+            createdAt: DateTime(2026, 5, 26),
+          ),
+        ];
+
+        when(() => mockBloc.state)
+            .thenReturn(NotificationsLoaded(notifications: testNotifications));
+        when(() => mockBloc.stream)
+            .thenAnswer((_) => const Stream.empty());
+        when(() => mockRepository.watchActorPhotoUrl(actorId: 'actor-1'))
+            .thenAnswer((_) => Stream.value('https://example.com/alice.jpg'));
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: RepositoryProvider<NotificationsRepository>(
+              create: (_) => mockRepository,
+              child: BlocProvider<NotificationsBloc>.value(
+                value: mockBloc,
+                child: const NotificationsScreen(),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        expect(find.byType(CircleAvatar), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is CircleAvatar &&
+                widget.backgroundImage is NetworkImage,
+          ),
+          findsOneWidget,
+        );
       },
     );
 

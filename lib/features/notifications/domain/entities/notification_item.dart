@@ -14,7 +14,6 @@ class NotificationItem {
     required this.type,
     required this.actorId,
     required this.actorDisplayName,
-    this.actorPhotoUrl,
     this.postId,
     required this.isRead,
     required this.createdAt,
@@ -25,7 +24,6 @@ class NotificationItem {
   final String type;
   final String actorId;
   final String actorDisplayName;
-  final String? actorPhotoUrl;
   final String? postId;
   final bool isRead;
   final DateTime createdAt;
@@ -37,7 +35,6 @@ class NotificationItem {
         type: type,
         actorId: actorId,
         actorDisplayName: actorDisplayName,
-        actorPhotoUrl: actorPhotoUrl,
         postId: postId,
         isRead: isRead ?? this.isRead,
         createdAt: createdAt,
