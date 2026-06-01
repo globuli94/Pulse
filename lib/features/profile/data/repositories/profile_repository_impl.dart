@@ -58,4 +58,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<void> deleteAccount() async {
     await _dataSource.deleteAccount();
   }
+
+  @override
+  Stream<({String displayName, String? avatarUrl})> watchUserDisplayInfo(String uid) =>
+      _dataSource.watchUserDisplayInfo(uid);
 }

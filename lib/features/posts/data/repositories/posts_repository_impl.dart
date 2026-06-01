@@ -47,15 +47,11 @@ class PostsRepositoryImpl implements PostsRepository {
   Future<void> createPost({
     required String text,
     required String userId,
-    required String displayName,
-    String? avatarUrl,
     XFile? image,
   }) {
     return _dataSource.createPost(
       text: text,
       userId: userId,
-      displayName: displayName,
-      avatarUrl: avatarUrl,
       image: image,
     );
   }
@@ -98,18 +94,6 @@ class PostsRepositoryImpl implements PostsRepository {
   Stream<int> watchLikeCount(String postId) =>
       _dataSource.watchLikeCount(postId);
 
-  @override
-  Future<void> updateAuthorInfoOnPosts({
-    required String userId,
-    required String displayName,
-    required String? avatarUrl,
-  }) =>
-      _dataSource.updateAuthorInfoOnPosts(
-        userId: userId,
-        displayName: displayName,
-        avatarUrl: avatarUrl,
-      );
-
   Post _mapToPost(Map<String, dynamic> map) {
     final createdAt = map['createdAt'];
     final DateTime dateTime;
@@ -122,8 +106,6 @@ class PostsRepositoryImpl implements PostsRepository {
     return Post(
       id: map['id'] as String,
       userId: map['userId'] as String,
-      displayName: map['displayName'] as String,
-      avatarUrl: map['avatarUrl'] as String?,
       text: map['text'] as String,
       imageUrl: map['imageUrl'] as String?,
       createdAt: dateTime,

@@ -145,7 +145,6 @@ class PulseApp extends StatelessWidget {
             create: (context) => ProfileBloc(
               profileRepository: context.read<ProfileRepository>(),
               authRepository: context.read<AuthRepository>(),
-              postsRepository: context.read<PostsRepository>(),
             ),
           ),
           BlocProvider<PostsFeedBloc>(

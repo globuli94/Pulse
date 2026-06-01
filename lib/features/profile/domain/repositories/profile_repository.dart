@@ -35,4 +35,7 @@ abstract class ProfileRepository {
   /// 2. Deletes `avatars/{uid}` from Firebase Storage (swallows NotFound).
   /// 3. Calls `FirebaseAuth.instance.currentUser!.delete()`.
   Future<void> deleteAccount();
+
+  /// Streams the author display info (displayName, avatarUrl) from users/{uid}.
+  Stream<({String displayName, String? avatarUrl})> watchUserDisplayInfo(String uid);
 }
