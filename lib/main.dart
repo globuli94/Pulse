@@ -157,7 +157,7 @@ class PulseApp extends StatelessWidget {
                 repository: context.read<PostsRepository>(),
                 followsRepository: context.read<FollowsRepository>(),
                 currentUserId: currentUserId,
-              )..add(const PostsFeedSubscriptionRequested());
+              );
             },
           ),
           BlocProvider<ProfilePostsBloc>(
@@ -192,10 +192,19 @@ class PulseApp extends StatelessWidget {
           title: 'Pulse',
           theme: AppTheme.light,
           routerConfig: _router,
-          builder: (context, child) => GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            behavior: HitTestBehavior.opaque,
-            child: child!,
+          builder: (context, child) => BlocListener<AuthBloc, AuthState>(
+            listener: (context, authState) {
+              if (authState is Authenticated) {
+                context
+                    .read<PostsFeedBloc>()
+                    .startWatching(authState.user.uid);
+              }
+            },
+            child: GestureDetector(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              behavior: HitTestBehavior.opaque,
+              child: child!,
+            ),
           ),
         ),
       ),
