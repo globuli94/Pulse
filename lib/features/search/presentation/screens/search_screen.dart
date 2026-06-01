@@ -62,7 +62,12 @@ class _SearchScreenBodyState extends State<_SearchScreenBody> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, kToolbarHeight + 12, 12, 12),
+            padding: EdgeInsets.fromLTRB(
+              12,
+              MediaQuery.of(context).padding.top + kToolbarHeight + 12,
+              12,
+              12,
+            ),
             child: TextField(
               controller: _controller,
               decoration: InputDecoration(
