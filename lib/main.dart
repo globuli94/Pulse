@@ -192,6 +192,11 @@ class PulseApp extends StatelessWidget {
           title: 'Pulse',
           theme: AppTheme.light,
           routerConfig: _router,
+          builder: (context, child) => GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            behavior: HitTestBehavior.opaque,
+            child: child!,
+          ),
         ),
       ),
     );
