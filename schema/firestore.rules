@@ -45,6 +45,10 @@ service cloud.firestore {
       // Owner may delete their own follow
       allow delete: if request.auth != null
                     && resource.data.followerId == request.auth.uid;
+
+      // Followee may delete the follow document on account deletion
+      allow delete: if request.auth != null
+                    && resource.data.followeeId == request.auth.uid;
     }
 
     // ---------------------------------------------------------------
@@ -110,7 +114,10 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['isRead']);
 
-      // Delete is denied for all users (no allow delete rule)
+      // Recipient or actor may delete notification (account deletion cleanup)
+      allow delete: if request.auth != null
+                    && (resource.data.userId == request.auth.uid
+                        || resource.data.actorId == request.auth.uid);
     }
 
     // ---------------------------------------------------------------
@@ -130,6 +137,10 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.auth.uid in resource.data.participantIds;
 
+      // Participant may delete conversation (account deletion cleanup)
+      allow delete: if request.auth != null
+                    && request.auth.uid in resource.data.participantIds;
+
       // ---------------------------------------------------------------
       // conversations/{conversationId}/messages/{messageId}
       // ---------------------------------------------------------------
@@ -143,6 +154,10 @@ service cloud.firestore {
         allow create: if request.auth != null
                       && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
                       && request.resource.data.senderId == request.auth.uid;
+
+        // Participant of the parent conversation may delete message (account deletion cleanup)
+        allow delete: if request.auth != null
+                      && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       }
     }
 

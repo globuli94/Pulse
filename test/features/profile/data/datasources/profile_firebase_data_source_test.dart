@@ -8,6 +8,8 @@ import 'package:pulse/features/profile/data/datasources/profile_firebase_data_so
 
 class MockFirebaseAuth extends Mock implements FirebaseAuth {}
 class MockFirebaseStorage extends Mock implements FirebaseStorage {}
+class MockUser extends Mock implements User {}
+class MockReference extends Mock implements Reference {}
 
 void main() {
   group('ProfileFirebaseDataSource', () {
@@ -228,6 +230,271 @@ void main() {
         final post2 =
             await fakeFirestore.collection('posts').doc('post2').get();
         expect(post2['displayName'], oldName); // Should remain unchanged
+      },
+    );
+
+    test(
+      'deleteAccount() removes all owned content',
+      () async {
+        final uid = 'uid-test';
+        final mockUser = MockUser();
+        final mockRef = MockReference();
+
+        // Arrange: set up auth to return a user with the test uid
+        when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+        when(() => mockUser.uid).thenReturn(uid);
+        when(() => mockUser.delete()).thenAnswer((_) async {});
+
+        // Arrange: set up storage mock
+        when(() => mockFirebaseStorage.ref()).thenReturn(mockRef);
+        when(() => mockRef.child(any())).thenReturn(mockRef);
+        when(() => mockRef.delete()).thenAnswer((_) async {});
+
+        // Arrange: seed firestore with data owned by uid-test
+        await fakeFirestore
+            .collection('posts')
+            .doc('post1')
+            .set({'userId': uid});
+
+        await fakeFirestore
+            .collection('likes')
+            .doc('like1')
+            .set({'userId': uid});
+
+        await fakeFirestore
+            .collection('follows')
+            .doc('f1')
+            .set({'followerId': uid, 'followeeId': 'other'});
+
+        await fakeFirestore
+            .collection('follows')
+            .doc('f2')
+            .set({'followerId': 'other', 'followeeId': uid});
+
+        await fakeFirestore
+            .collection('notifications')
+            .doc('n1')
+            .set({'userId': uid, 'actorId': 'other'});
+
+        await fakeFirestore
+            .collection('notifications')
+            .doc('n2')
+            .set({'userId': 'other', 'actorId': uid});
+
+        await fakeFirestore
+            .collection('conversations')
+            .doc('c1')
+            .set({'participantIds': [uid, 'other']});
+
+        await fakeFirestore
+            .collection('conversations')
+            .doc('c1')
+            .collection('messages')
+            .doc('m1')
+            .set({'text': 'hi'});
+
+        await fakeFirestore.collection('users').doc(uid).set({
+          'displayName': 'Test',
+        });
+
+        // Act
+        await dataSource.deleteAccount();
+
+        // Assert: verify all data owned by uid is deleted
+        expect(
+          (await fakeFirestore
+                  .collection('posts')
+                  .doc('post1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('likes')
+                  .doc('like1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('follows')
+                  .doc('f1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('follows')
+                  .doc('f2')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('notifications')
+                  .doc('n1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('notifications')
+                  .doc('n2')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('conversations')
+                  .doc('c1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore
+                  .collection('conversations')
+                  .doc('c1')
+                  .collection('messages')
+                  .doc('m1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        expect(
+          (await fakeFirestore.collection('users').doc(uid).get()).exists,
+          false,
+        );
+
+        verify(() => mockUser.delete()).called(1);
+      },
+    );
+
+    test(
+      'deleteAccount() leaves other users\' content untouched',
+      () async {
+        final uid = 'uid-test';
+        final otherUid = 'other-uid';
+        final mockUser = MockUser();
+        final mockRef = MockReference();
+
+        // Arrange: set up auth to return a user with the test uid
+        when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+        when(() => mockUser.uid).thenReturn(uid);
+        when(() => mockUser.delete()).thenAnswer((_) async {});
+
+        // Arrange: set up storage mock
+        when(() => mockFirebaseStorage.ref()).thenReturn(mockRef);
+        when(() => mockRef.child(any())).thenReturn(mockRef);
+        when(() => mockRef.delete()).thenAnswer((_) async {});
+
+        // Arrange: seed firestore with data owned by uid-test and other-uid
+        await fakeFirestore
+            .collection('posts')
+            .doc('post1')
+            .set({'userId': uid});
+
+        await fakeFirestore
+            .collection('posts')
+            .doc('other-post')
+            .set({'userId': otherUid});
+
+        await fakeFirestore
+            .collection('users')
+            .doc(uid)
+            .set({'displayName': 'Test'});
+
+        await fakeFirestore
+            .collection('users')
+            .doc(otherUid)
+            .set({'displayName': 'Other'});
+
+        // Act
+        await dataSource.deleteAccount();
+
+        // Assert: uid's content should be deleted
+        expect(
+          (await fakeFirestore
+                  .collection('posts')
+                  .doc('post1')
+                  .get())
+              .exists,
+          false,
+        );
+
+        // Assert: other user's content should remain
+        expect(
+          (await fakeFirestore
+                  .collection('posts')
+                  .doc('other-post')
+                  .get())
+              .exists,
+          true,
+        );
+
+        expect(
+          (await fakeFirestore.collection('users').doc(otherUid).get()).exists,
+          true,
+        );
+      },
+    );
+
+    test(
+      'deleteAccount() throws when no user is signed in',
+      () async {
+        // Arrange: no user signed in
+        when(() => mockFirebaseAuth.currentUser).thenReturn(null);
+
+        // Act & Assert
+        expect(
+          () => dataSource.deleteAccount(),
+          throwsA(isA<Exception>()),
+        );
+      },
+    );
+
+    test(
+      'deleteAccount() succeeds even if storage avatar is missing',
+      () async {
+        final uid = 'uid-test';
+        final mockUser = MockUser();
+        final mockRef = MockReference();
+
+        // Arrange: set up auth to return a user with the test uid
+        when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+        when(() => mockUser.uid).thenReturn(uid);
+        when(() => mockUser.delete()).thenAnswer((_) async {});
+
+        // Arrange: set up storage mock to throw object-not-found
+        when(() => mockFirebaseStorage.ref()).thenReturn(mockRef);
+        when(() => mockRef.child(any())).thenReturn(mockRef);
+        when(() => mockRef.delete()).thenThrow(
+          FirebaseException(plugin: 'storage', code: 'object-not-found'),
+        );
+
+        // Arrange: seed minimal firestore data
+        await fakeFirestore.collection('users').doc(uid).set({
+          'displayName': 'Test',
+        });
+
+        // Act & Assert: should complete without throwing
+        await dataSource.deleteAccount();
+        // If we reach here without exception, test passes
+        expect(true, true);
       },
     );
   });
