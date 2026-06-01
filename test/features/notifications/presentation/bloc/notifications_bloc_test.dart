@@ -27,7 +27,6 @@ void main() {
               type: 'like',
               actorId: 'actor-1',
               actorDisplayName: 'Alice',
-              actorPhotoUrl: 'https://example.com/alice.jpg',
               postId: 'post-1',
               isRead: false,
               createdAt: DateTime(2026, 5, 26),
