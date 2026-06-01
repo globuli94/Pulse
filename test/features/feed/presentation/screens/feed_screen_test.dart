@@ -567,5 +567,53 @@ void main() {
         expect(find.byType(RefreshIndicator), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'SOCAA-564: ListView has correct top padding (status bar + toolbar)',
+      (WidgetTester tester) async {
+        final testPosts = [
+          Post(
+            id: '1',
+            userId: 'user1',
+            displayName: 'User One',
+            text: 'Test post',
+            imageUrl: null,
+            createdAt: DateTime.now(),
+          ),
+        ];
+
+        final loadedState = PostsFeedLoaded(posts: testPosts);
+        when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
+
+        await tester.pumpWidget(
+          RepositoryProvider<PostsRepository>.value(
+            value: mockPostsRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                BlocProvider<PostsFeedBloc>.value(value: mockPostsFeedBloc),
+              ],
+              child: const MaterialApp(home: FeedScreen()),
+            ),
+          ),
+        );
+
+        // Find the ListView with posts
+        final listViewFinder = find.byType(ListView);
+        expect(listViewFinder, findsOneWidget);
+
+        // Get the ListView widget
+        final listView = tester.widget<ListView>(listViewFinder);
+
+        // Get MediaQuery padding from the context
+        final context = tester.element(listViewFinder);
+        final mediaQueryPadding = MediaQuery.of(context).padding.top;
+        final expectedTop = mediaQueryPadding + kToolbarHeight;
+
+        // Assert padding.top
+        final resolvedPadding = listView.padding?.resolve(TextDirection.ltr);
+        expect(resolvedPadding?.top, expectedTop);
+      },
+    );
   });
 }

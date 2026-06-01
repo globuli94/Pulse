@@ -357,5 +357,47 @@ void main() {
             equals(Theme.of(tester.element(textFieldFinder.first)).colorScheme.primary));
       }
     });
+
+    testWidgets(
+      'SOCAA-564: top-level Padding has correct top padding (status bar + toolbar + 12)',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MultiRepositoryProvider(
+              providers: [
+                RepositoryProvider<SearchRepository>.value(
+                  value: mockSearchRepository,
+                ),
+                RepositoryProvider<FollowsRepository>.value(
+                  value: mockFollowsRepository,
+                ),
+              ],
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<AuthBloc>.value(value: mockAuthBloc),
+                ],
+                child: const SearchScreen(),
+              ),
+            ),
+          ),
+        );
+
+        // Find the top-level Padding widget
+        final paddingFinder = find.byType(Padding);
+        expect(paddingFinder, findsWidgets);
+
+        // Get the first Padding widget (top-level)
+        final padding = tester.widget<Padding>(paddingFinder.first);
+
+        // Get MediaQuery padding from the context
+        final context = tester.element(paddingFinder.first);
+        final mediaQueryPadding = MediaQuery.of(context).padding.top;
+        final expectedTop = mediaQueryPadding + kToolbarHeight + 12;
+
+        // Assert padding.top
+        final resolvedPadding = padding.padding.resolve(TextDirection.ltr);
+        expect(resolvedPadding.top, expectedTop);
+      },
+    );
   });
 }
