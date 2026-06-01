@@ -165,10 +165,6 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
         'createdAt': FieldValue.serverTimestamp(),
       },
     );
-    batch.update(
-      _firestore.collection('posts').doc(postId),
-      {'likeCount': FieldValue.increment(1)},
-    );
 
     // Write a like notification for the post owner (skip self-likes).
     if (postOwnerUid != null && postOwnerUid != userId) {
@@ -198,10 +194,6 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
     final likeId = '${userId}_$postId';
     final batch = _firestore.batch();
     batch.delete(_firestore.collection('likes').doc(likeId));
-    batch.update(
-      _firestore.collection('posts').doc(postId),
-      {'likeCount': FieldValue.increment(-1)},
-    );
     await batch.commit();
   }
 
@@ -231,10 +223,10 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   @override
   Stream<int> watchLikeCount(String postId) {
     return _firestore
-        .collection('posts')
-        .doc(postId)
+        .collection('likes')
+        .where('postId', isEqualTo: postId)
         .snapshots()
-        .map((doc) => (doc.data()?['likeCount'] as num?)?.toInt() ?? 0);
+        .map((snap) => snap.size);
   }
 
   @override

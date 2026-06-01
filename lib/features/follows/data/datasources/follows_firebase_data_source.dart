@@ -44,18 +44,6 @@ class FollowsFirebaseDataSource implements FollowsRemoteDataSource {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    // Increment followingCount on the follower's user document.
-    batch.update(
-      _firestore.collection('users').doc(followerId),
-      {'followingCount': FieldValue.increment(1)},
-    );
-
-    // Increment followerCount on the followee's user document.
-    batch.update(
-      _firestore.collection('users').doc(followeeId),
-      {'followerCount': FieldValue.increment(1)},
-    );
-
     // Write a follow notification for the followee (guard against self-follow).
     if (followerId != followeeId) {
       final notifRef = _firestore.collection('notifications').doc();
@@ -88,18 +76,6 @@ class FollowsFirebaseDataSource implements FollowsRemoteDataSource {
         .collection('follows')
         .doc(_docId(followerId, followeeId));
     batch.delete(followDoc);
-
-    // Decrement followingCount on the follower's user document.
-    batch.update(
-      _firestore.collection('users').doc(followerId),
-      {'followingCount': FieldValue.increment(-1)},
-    );
-
-    // Decrement followerCount on the followee's user document.
-    batch.update(
-      _firestore.collection('users').doc(followeeId),
-      {'followerCount': FieldValue.increment(-1)},
-    );
 
     await batch.commit();
   }
