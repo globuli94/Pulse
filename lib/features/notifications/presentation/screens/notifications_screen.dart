@@ -2,6 +2,8 @@
 //
 // NotificationsScreen — shows the current user's notifications.
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,8 +29,21 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: showAppBar,
       appBar: showAppBar
           ? AppBar(
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              flexibleSpace: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
               title: Text(
                 'Notifications',
                 style: TextStyle(
@@ -51,7 +66,11 @@ class NotificationsScreen extends StatelessWidget {
             if (notifications.isEmpty) {
               return const Center(child: Text('No notifications yet.'));
             }
+            final topPadding = showAppBar
+                ? MediaQuery.of(context).viewPadding.top + kToolbarHeight
+                : 0.0;
             return ListView.builder(
+              padding: EdgeInsets.only(top: topPadding),
               itemCount: notifications.length,
               itemBuilder: (context, index) {
                 final n = notifications[index];
