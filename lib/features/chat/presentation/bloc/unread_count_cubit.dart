@@ -24,8 +24,18 @@ class UnreadCountCubit extends Cubit<int> {
         super(0);
 
   final ChatRepository _repository;
-  final String _currentUserId;
+  String _currentUserId;
   StreamSubscription<dynamic>? _subscription;
+
+  /// Starts (or restarts) the Firestore stream subscription for [userId].
+  ///
+  /// Cancels any previous subscription first so the cubit is safe to call
+  /// again when the authenticated user changes.
+  void startWatching(String userId) {
+    _subscription?.cancel();
+    _currentUserId = userId;
+    watchUnreadCount();
+  }
 
   /// Starts listening to the conversations stream and updating the unread total.
   void watchUnreadCount() {

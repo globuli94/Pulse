@@ -193,11 +193,18 @@ class PulseApp extends StatelessWidget {
           theme: AppTheme.light,
           routerConfig: _router,
           builder: (context, child) => BlocListener<AuthBloc, AuthState>(
-            listener: (context, authState) {
-              if (authState is Authenticated) {
+            listenWhen: (_, current) => current is Authenticated,
+            listener: (context, state) {
+              if (state is Authenticated) {
+                context
+                    .read<UnreadCountCubit>()
+                    .startWatching(state.user.uid);
+                context
+                    .read<UnreadNotificationsCountCubit>()
+                    .startWatching(state.user.uid);
                 context
                     .read<PostsFeedBloc>()
-                    .startWatching(authState.user.uid);
+                    .startWatching(state.user.uid);
               }
             },
             child: GestureDetector(
