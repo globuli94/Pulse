@@ -497,5 +497,246 @@ void main() {
         expect(true, true);
       },
     );
+
+    group('ProfileFirebaseDataSource — getProfile() dynamic counts', () {
+      test(
+        'TC-1: postCount reflects actual posts document count, not a stored field',
+        () async {
+          final uid = 'uid1';
+
+          // Arrange: seed users/{uid1} with NO postCount field
+          await fakeFirestore.collection('users').doc(uid).set({
+            'uid': uid,
+            'displayName': 'Alice',
+            'bio': '',
+            'avatarUrl': null,
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed three posts with userId == 'uid1'
+          await fakeFirestore.collection('posts').doc('post1').set({
+            'userId': uid,
+            'text': 'Post 1',
+            'createdAt': Timestamp.now(),
+          });
+
+          await fakeFirestore.collection('posts').doc('post2').set({
+            'userId': uid,
+            'text': 'Post 2',
+            'createdAt': Timestamp.now(),
+          });
+
+          await fakeFirestore.collection('posts').doc('post3').set({
+            'userId': uid,
+            'text': 'Post 3',
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed one post with a different userId == 'uid2' (must NOT be counted)
+          await fakeFirestore.collection('posts').doc('post4').set({
+            'userId': 'uid2',
+            'text': 'Post by other user',
+            'createdAt': Timestamp.now(),
+          });
+
+          // Act
+          final result = await dataSource.getProfile(uid);
+
+          // Assert
+          expect(result['postCount'], 3);
+        },
+      );
+
+      test(
+        'TC-2: followerCount reflects count of follows docs where followeeId == uid',
+        () async {
+          final uid = 'uid1';
+
+          // Arrange: seed users/{uid1}
+          await fakeFirestore.collection('users').doc(uid).set({
+            'uid': uid,
+            'displayName': 'Alice',
+            'bio': '',
+            'avatarUrl': null,
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed two follows docs with followeeId == 'uid1'
+          await fakeFirestore.collection('follows').doc('follow1').set({
+            'followerId': 'uid2',
+            'followeeId': uid,
+          });
+
+          await fakeFirestore.collection('follows').doc('follow2').set({
+            'followerId': 'uid3',
+            'followeeId': uid,
+          });
+
+          // Arrange: seed one follows doc with a different followeeId == 'uid2' (must NOT be counted)
+          await fakeFirestore.collection('follows').doc('follow3').set({
+            'followerId': uid,
+            'followeeId': 'uid2',
+          });
+
+          // Act
+          final result = await dataSource.getProfile(uid);
+
+          // Assert
+          expect(result['followerCount'], 2);
+        },
+      );
+
+      test(
+        'TC-3: followingCount reflects count of follows docs where followerId == uid',
+        () async {
+          final uid = 'uid1';
+
+          // Arrange: seed users/{uid1}
+          await fakeFirestore.collection('users').doc(uid).set({
+            'uid': uid,
+            'displayName': 'Alice',
+            'bio': '',
+            'avatarUrl': null,
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed four follows docs with followerId == 'uid1'
+          await fakeFirestore.collection('follows').doc('follow1').set({
+            'followerId': uid,
+            'followeeId': 'uid2',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow2').set({
+            'followerId': uid,
+            'followeeId': 'uid3',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow3').set({
+            'followerId': uid,
+            'followeeId': 'uid4',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow4').set({
+            'followerId': uid,
+            'followeeId': 'uid5',
+          });
+
+          // Arrange: seed one follows doc with a different followerId == 'uid2' (must NOT be counted)
+          await fakeFirestore.collection('follows').doc('follow5').set({
+            'followerId': 'uid2',
+            'followeeId': uid,
+          });
+
+          // Act
+          final result = await dataSource.getProfile(uid);
+
+          // Assert
+          expect(result['followingCount'], 4);
+        },
+      );
+
+      test(
+        'TC-4: stored postCount field on users document is ignored',
+        () async {
+          final uid = 'uid1';
+
+          // Arrange: seed users/{uid1} with deliberately stale postCount field set to 99
+          await fakeFirestore.collection('users').doc(uid).set({
+            'uid': uid,
+            'displayName': 'Alice',
+            'bio': '',
+            'postCount': 99,
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed zero posts for uid1
+
+          // Act
+          final result = await dataSource.getProfile(uid);
+
+          // Assert: postCount should be 0 (dynamic), NOT 99 (stored field is overwritten)
+          expect(result['postCount'], 0);
+        },
+      );
+
+      test(
+        'TC-5: all three counts are correct simultaneously',
+        () async {
+          final uid = 'uid1';
+
+          // Arrange: seed users/{uid1}
+          await fakeFirestore.collection('users').doc(uid).set({
+            'uid': uid,
+            'displayName': 'Alice',
+            'bio': '',
+            'avatarUrl': null,
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed 2 posts with userId == 'uid1'
+          await fakeFirestore.collection('posts').doc('post1').set({
+            'userId': uid,
+            'text': 'Post 1',
+            'createdAt': Timestamp.now(),
+          });
+
+          await fakeFirestore.collection('posts').doc('post2').set({
+            'userId': uid,
+            'text': 'Post 2',
+            'createdAt': Timestamp.now(),
+          });
+
+          // Arrange: seed 3 follows with followeeId == 'uid1'
+          await fakeFirestore.collection('follows').doc('follow1').set({
+            'followerId': 'uid2',
+            'followeeId': uid,
+          });
+
+          await fakeFirestore.collection('follows').doc('follow2').set({
+            'followerId': 'uid3',
+            'followeeId': uid,
+          });
+
+          await fakeFirestore.collection('follows').doc('follow3').set({
+            'followerId': 'uid4',
+            'followeeId': uid,
+          });
+
+          // Arrange: seed 5 follows with followerId == 'uid1'
+          await fakeFirestore.collection('follows').doc('follow4').set({
+            'followerId': uid,
+            'followeeId': 'uid5',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow5').set({
+            'followerId': uid,
+            'followeeId': 'uid6',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow6').set({
+            'followerId': uid,
+            'followeeId': 'uid7',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow7').set({
+            'followerId': uid,
+            'followeeId': 'uid8',
+          });
+
+          await fakeFirestore.collection('follows').doc('follow8').set({
+            'followerId': uid,
+            'followeeId': 'uid9',
+          });
+
+          // Act
+          final result = await dataSource.getProfile(uid);
+
+          // Assert
+          expect(result['postCount'], 2);
+          expect(result['followerCount'], 3);
+          expect(result['followingCount'], 5);
+        },
+      );
+    });
   });
 }
