@@ -28,11 +28,38 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getProfile(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
+    final docFuture = _firestore.collection('users').doc(uid).get();
+    final postCountFuture = _firestore
+        .collection('posts')
+        .where('userId', isEqualTo: uid)
+        .count()
+        .get();
+    final followerCountFuture = _firestore
+        .collection('follows')
+        .where('followeeId', isEqualTo: uid)
+        .count()
+        .get();
+    final followingCountFuture = _firestore
+        .collection('follows')
+        .where('followerId', isEqualTo: uid)
+        .count()
+        .get();
+
+    final doc = await docFuture;
     if (!doc.exists || doc.data() == null) {
       throw Exception('User profile not found for uid: $uid');
     }
-    return doc.data()!;
+    final postCountSnap = await postCountFuture;
+    final followerCountSnap = await followerCountFuture;
+    final followingCountSnap = await followingCountFuture;
+
+    return <String, dynamic>{
+      'uid': doc.id,
+      ...?doc.data(),
+      'postCount': postCountSnap.count ?? 0,
+      'followerCount': followerCountSnap.count ?? 0,
+      'followingCount': followingCountSnap.count ?? 0,
+    };
   }
 
   @override
