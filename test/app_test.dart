@@ -24,6 +24,11 @@ void main() {
     );
 
     when(() => mockAuthBloc.state).thenReturn(Authenticated(testUser));
+    // Use Stream.empty() so BlocListener<AuthBloc> in main.dart's
+    // MaterialApp builder never fires during this smoke test. Firing would
+    // call context.read<UnreadCountCubit>() which forces lazy creation of
+    // ChatRepository → FirebaseFirestore.instance → crash (Firebase is not
+    // initialised in the unit-test environment).
     when(() => mockAuthBloc.stream).thenAnswer(
       (_) => const Stream.empty(),
     );

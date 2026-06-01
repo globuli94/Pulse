@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -89,5 +91,108 @@ void main() {
       act: (cubit) => cubit.watchUnreadCount(),
       expect: () => [0],
     );
+
+    group('startWatching', () {
+      test('TC-1: startWatching with new userId subscribes to new userId\'s stream',
+          () async {
+        final cubitA =
+            UnreadCountCubit(repository: mockChatRepository, currentUserId: 'user-A');
+
+        when(() => mockChatRepository.watchConversations('user-A'))
+            .thenAnswer((_) => Stream.empty());
+        when(() => mockChatRepository.watchConversations('user-B')).thenAnswer(
+          (_) => Stream.value([
+            Conversation(
+              id: 'conv1',
+              participantIds: ['user-B', 'other'],
+              otherUserDisplayName: 'Test User',
+              lastMessageText: 'Hello',
+              lastMessageAt: DateTime.now(),
+              unreadCounts: {'user-B': 7},
+            ),
+          ]),
+        );
+
+        cubitA.startWatching('user-B');
+        await Future<void>.microtask(() {});
+
+        expect(cubitA.state, 7);
+        await cubitA.close();
+      });
+
+      test('TC-2: startWatching cancels prior subscription (no double-emit)',
+          () async {
+        final controllerA =
+            StreamController<List<Conversation>>.broadcast();
+        final controllerB =
+            StreamController<List<Conversation>>.broadcast();
+
+        when(() => mockChatRepository.watchConversations('user-A'))
+            .thenAnswer((_) => controllerA.stream);
+        when(() => mockChatRepository.watchConversations('user-B'))
+            .thenAnswer((_) => controllerB.stream);
+
+        final cubitA =
+            UnreadCountCubit(repository: mockChatRepository, currentUserId: 'user-A');
+
+        cubitA.watchUnreadCount();
+        controllerA.add([
+          Conversation(
+            id: 'conv1',
+            participantIds: ['user-A', 'other'],
+            otherUserDisplayName: 'Test User',
+            lastMessageText: 'Hello',
+            lastMessageAt: DateTime.now(),
+            unreadCounts: {'user-A': 3},
+          ),
+        ]);
+        await Future<void>.microtask(() {});
+        expect(cubitA.state, 3);
+
+        cubitA.startWatching('user-B');
+        controllerB.add([
+          Conversation(
+            id: 'conv2',
+            participantIds: ['user-B', 'other'],
+            otherUserDisplayName: 'Test User',
+            lastMessageText: 'Hi',
+            lastMessageAt: DateTime.now(),
+            unreadCounts: {'user-B': 5},
+          ),
+        ]);
+        await Future<void>.microtask(() {});
+        expect(cubitA.state, 5);
+
+        controllerA.add([
+          Conversation(
+            id: 'conv1',
+            participantIds: ['user-A', 'other'],
+            otherUserDisplayName: 'Test User',
+            lastMessageText: 'Hello',
+            lastMessageAt: DateTime.now(),
+            unreadCounts: {'user-A': 99},
+          ),
+        ]);
+        await Future<void>.microtask(() {});
+        expect(cubitA.state, 5); // Should still be 5, not 99
+
+        await controllerA.close();
+        await controllerB.close();
+        await cubitA.close();
+      });
+
+      test('TC-3: startWatching with empty userId does not subscribe',
+          () async {
+        final cubitA =
+            UnreadCountCubit(repository: mockChatRepository, currentUserId: 'user-A');
+
+        cubitA.startWatching('');
+
+        verifyNever(
+            () => mockChatRepository.watchConversations(any()));
+        expect(cubitA.state, 0);
+        await cubitA.close();
+      });
+    });
   });
 }

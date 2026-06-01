@@ -23,8 +23,18 @@ class UnreadNotificationsCountCubit extends Cubit<int> {
         super(0);
 
   final NotificationsRepository _repository;
-  final String _userId;
+  String _userId;
   StreamSubscription<int>? _subscription;
+
+  /// Starts (or restarts) the Firestore stream subscription for [userId].
+  ///
+  /// Cancels any previous subscription first so the cubit is safe to call
+  /// again when the authenticated user changes.
+  void startWatching(String userId) {
+    _subscription?.cancel();
+    _userId = userId;
+    watchUnreadCount();
+  }
 
   /// Starts listening to the unread count stream.
   void watchUnreadCount() {
