@@ -1,7 +1,7 @@
 # Firebase Schema — Pulse
 
 **Project:** Pulse
-**Classification:** Safe — rules tighten access (unauthenticated blocked); no field renames or removals.
+**Classification:** BREAKING — removes stored counter fields (`postCount`, `followerCount`, `followingCount` on `users`; `likeCount` on `posts`). Counts are now derived dynamically via Firestore count queries. See SOCAA-586 audit below.
 **Last updated:** 2026-06-01
 
 ---
@@ -21,10 +21,9 @@
 | `username` | string | required | Unique handle (e.g. @alice) |
 | `bio` | string | optional | Short bio; may be empty string |
 | `avatarUrl` | string | optional | HTTPS URL to avatar stored in Firebase Storage |
-| `followerCount` | number | required | Cached follower count; default 0 |
-| `followingCount` | number | required | Cached following count; default 0 |
-| `postCount` | number | required | Cached post count; default 0 |
 | `createdAt` | timestamp | required | Server timestamp set on first document creation |
+
+> ⚠️ **Breaking change (SOCAA-586):** `followerCount`, `followingCount`, and `postCount` fields have been removed. Counts are now derived dynamically: use `follows.where('followeeId', '==', uid).count()` for follower count, `follows.where('followerId', '==', uid).count()` for following count, and `posts.where('userId', '==', uid).count()` for post count.
 
 **Access Patterns:**
 
@@ -33,8 +32,7 @@
 | Authenticated user | Read own profile | `request.auth.uid == uid` |
 | Authenticated user | Read any user profile | `request.auth != null` |
 | Authenticated user | Create own document | `request.auth.uid == resource-id` (first sign-in) |
-| Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `postCount`, `username` |
-| Any authenticated user | Update `followerCount` / `followingCount` | Atomic increment/decrement during follow/unfollow transactions |
+| Owner | Update own profile fields | Only `displayName`, `bio`, `avatarUrl`, `username` |
 | Owner | Delete own document | `request.auth.uid == uid` (account deletion) |
 
 **Query Patterns:**
@@ -58,8 +56,9 @@
 | `avatarUrl` | string | optional | Author's avatar URL captured at post time; null if no avatar |
 | `text` | string | required | Post body text |
 | `imageUrl` | string | optional | Download URL for the post image in Firebase Storage; null if no image |
-| `likeCount` | number | required | Cached count of likes; default 0; incremented/decremented atomically via `FieldValue.increment` |
 | `createdAt` | timestamp | required | Server timestamp set on creation |
+
+> ⚠️ **Breaking change (SOCAA-586):** `likeCount` field has been removed. Like count is now derived dynamically via `likes.where('postId', '==', postId).count()`.
 
 **Access Patterns:**
 
@@ -68,15 +67,15 @@
 | Authenticated user | Read any post | `request.auth != null` |
 | Authenticated user | Create own post | `request.auth.uid == request.resource.data.userId` |
 | Author | Delete own post | `request.auth.uid == resource.data.userId` |
-| Any authenticated user | Update `likeCount` | `FieldValue.increment(1)` or `FieldValue.increment(-1)` — like/unlike action |
 | Author | Update `displayName` and `avatarUrl` on own posts | `request.auth.uid == resource.data.userId` — profile update propagation (batch write from `updateProfile`) |
 
 **Query Patterns:**
 
-| Query | Index Required |
-|---|---|
-| No filter, order by `createdAt DESC` — global feed | No (single-field) |
-| Filter `userId == X`, order by `createdAt DESC` — user post list / profile grid | **Yes** (composite: `userId ASC`, `createdAt DESC`) |
+| Query | `.where()` | `.orderBy()` | Index Required | Purpose |
+|---|---|---|---|---|
+| No filter, order by `createdAt DESC` | — | `createdAt DESC` | No (single-field) | Global feed |
+| Filter by author | `userId == uid` | `createdAt DESC` | **Yes** (composite: `userId ASC`, `createdAt DESC`) | User post list / profile grid |
+| Dynamic post count for user | `userId == uid` | — | No (single-field auto-index) | `posts.where('userId', '==', uid).count()` replaces `postCount` |
 
 ---
 
@@ -108,6 +107,8 @@
 | Get followers list | `followedId == uid` | — | No | Resolve follower list for profile screen |
 | Get following list | `followerId == uid` | — | No | Resolve following list for profile screen |
 | Check if following | doc ID `{currentUid}_{targetUid}` | N/A | No | O(1) existence check |
+| Dynamic follower count | `followeeId == uid` | — | No (single-field auto-index) | `follows.where('followeeId', '==', uid).count()` replaces `followerCount` |
+| Dynamic following count | `followerId == uid` | — | No (single-field auto-index) | `follows.where('followerId', '==', uid).count()` replaces `followingCount` |
 
 ---
 
@@ -133,7 +134,10 @@
 
 **Query Patterns:**
 
-All lookups are single-document reads using the composite key `{userId}_{postId}`. No compound queries, no `.orderBy()` — **no composite index required**.
+| Query | `.where()` | `.orderBy()` | Index Required | Purpose |
+|---|---|---|---|---|
+| Check if liked | doc ID `{userId}_{postId}` | — | No | O(1) existence check |
+| Dynamic like count for post | `postId == postId` | — | No (single-field auto-index) | `likes.where('postId', '==', postId).count()` replaces `likeCount` |
 
 ---
 
@@ -602,3 +606,52 @@ The notification queries remain unchanged (flat `notifications` collection, `use
 | `firebase-schema.md` — `actorPhotoUrl` removed from notifications field table; `actorId` join note added | ✅ Done |
 | `schema/firestore.rules` — no changes required; rules confirmed consistent with `actorId`-only pattern | ✅ Confirmed |
 | `firestore.indexes.json` — existing composite indexes unchanged; no new index required | ✅ Confirmed |
+
+---
+
+## Firestore Rules Audit — SOCAA-586 BUG-019: Remove Stored Counter Fields
+
+**Audit date:** 2026-06-01
+**Classification:** BREAKING — removes `postCount`, `followerCount`, `followingCount` from `users`; removes `likeCount` from `posts`. Counts are now derived dynamically via Firestore count queries.
+
+### Migration Path
+
+No Firestore data migration is required. The removed fields are additive counters that were maintained client-side. Existing documents that still contain these fields will simply have unused fields; they do not need to be backfilled or deleted. The dynamic count queries ride on existing `allow read: if request.auth != null` rules already in place for `posts`, `follows`, and `likes`.
+
+### Collections Affected
+
+| Collection | Field Removed | Replacement Query |
+|---|---|---|
+| `users` | `postCount` | `posts.where('userId', '==', uid).count()` |
+| `users` | `followerCount` | `follows.where('followeeId', '==', uid).count()` |
+| `users` | `followingCount` | `follows.where('followerId', '==', uid).count()` |
+| `posts` | `likeCount` | `likes.where('postId', '==', postId).count()` |
+
+### Rules Changes
+
+| Rule Removed | Collection | Reason |
+|---|---|---|
+| `hasOnly(['followerCount', 'followingCount'])` update block | `users` | Counter writes no longer occur; rule deleted entirely |
+| `'postCount'` removed from owner update `hasOnly([...])` list | `users` | `postCount` no longer a valid field |
+| `hasOnly(['likeCount'])` update block | `posts` | Counter writes no longer occur; rule deleted entirely |
+
+### Dynamic Count Query Rules Coverage
+
+| Operation | Collection | Rule in Effect |
+|---|---|---|
+| Count posts by user (`userId == uid`) | `posts` | `allow read: if request.auth != null` ✅ — already exists |
+| Count followers (`followeeId == uid`) | `follows` | `allow read: if request.auth != null` ✅ — already exists |
+| Count following (`followerId == uid`) | `follows` | `allow read: if request.auth != null` ✅ — already exists |
+| Count likes on post (`postId == postId`) | `likes` | `allow read: if request.auth != null` ✅ — already exists |
+
+**No new rules required.** All count queries are covered by existing read rules.
+
+### Composite Index Determination
+
+All four count queries filter on a single field (`userId`, `followeeId`, `followerId`, `postId`). Firestore auto-generates single-field indexes for each of these. **No new composite index entries required.**
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — `postCount`, `followerCount`, `followingCount` removed from `users`; `likeCount` removed from `posts`; BREAKING callouts added; dynamic count query patterns documented | ✅ Done |
+| `schema/firestore.rules` — `postCount` removed from owner update allowed keys; `followerCount`/`followingCount` update rule deleted; `likeCount` update rule on `posts` deleted | ✅ Done |
+| `firestore.indexes.json` — no new composite index required; single-field auto-indexes are sufficient | ✅ Confirmed |

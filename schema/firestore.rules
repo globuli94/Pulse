@@ -19,12 +19,7 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.auth.uid == uid
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['displayName', 'bio', 'avatarUrl', 'postCount', 'username']);
-
-      // Any authenticated user may update follower/following counts (for follow/unfollow transactions)
-      allow update: if request.auth != null
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['followerCount', 'followingCount']);
+                         .hasOnly(['displayName', 'bio', 'avatarUrl', 'username']);
 
       // Owner may delete their own document as part of account deletion
       allow delete: if request.auth != null && request.auth.uid == uid;
@@ -66,11 +61,6 @@ service cloud.firestore {
       // Only author may delete their own post
       allow delete: if request.auth != null
                     && request.auth.uid == resource.data.userId;
-
-      // Any authenticated user may update likeCount (FieldValue.increment for like/unlike)
-      allow update: if request.auth != null
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['likeCount']);
 
       // Post author may update displayName and avatarUrl on their own posts (profile update propagation)
       allow update: if request.auth != null
