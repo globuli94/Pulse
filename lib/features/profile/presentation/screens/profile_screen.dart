@@ -114,6 +114,7 @@ class _ProfileScreenBody extends StatelessWidget {
       builder: (context, postsState) {
         return CustomScrollView(
           slivers: [
+            const SliverPadding(padding: EdgeInsets.only(top: kToolbarHeight)),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(24),
