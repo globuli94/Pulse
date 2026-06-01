@@ -47,4 +47,13 @@ class NotificationsFirebaseDataSource implements NotificationsRemoteDataSource {
         .doc(notificationId)
         .update({'isRead': true});
   }
+
+  @override
+  Stream<String?> watchActorPhotoUrl({required String actorId}) {
+    return _firestore
+        .collection('users')
+        .doc(actorId)
+        .snapshots()
+        .map((doc) => doc.data()?['avatarUrl'] as String?);
+  }
 }

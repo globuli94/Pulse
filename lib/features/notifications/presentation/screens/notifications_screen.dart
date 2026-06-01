@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/repositories/notifications_repository.dart';
 import '../bloc/notifications_bloc.dart';
 import '../widgets/notification_tile.dart';
 
@@ -58,6 +59,10 @@ class NotificationsScreen extends StatelessWidget {
                 return NotificationTile(
                   key: ValueKey(n.id),
                   notification: n,
+                  actorPhotoUrlStream:
+                      context.read<NotificationsRepository>().watchActorPhotoUrl(
+                            actorId: n.actorId,
+                          ),
                   onTap: () => context.read<NotificationsBloc>().add(
                         NotificationMarkReadRequested(
                           notificationId: n.id,

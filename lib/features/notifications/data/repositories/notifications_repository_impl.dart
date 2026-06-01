@@ -34,6 +34,11 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
     return _dataSource.markAsRead(notificationId: notificationId);
   }
 
+  @override
+  Stream<String?> watchActorPhotoUrl({required String actorId}) {
+    return _dataSource.watchActorPhotoUrl(actorId: actorId);
+  }
+
   NotificationItem _fromMap(Map<String, dynamic> map) {
     final ts = map['createdAt'];
     DateTime createdAt;
@@ -49,7 +54,6 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       type: map['type'] as String? ?? '',
       actorId: map['actorId'] as String? ?? '',
       actorDisplayName: map['actorDisplayName'] as String? ?? '',
-      actorPhotoUrl: map['actorPhotoUrl'] as String?,
       postId: map['postId'] as String?,
       isRead: map['isRead'] as bool? ?? false,
       createdAt: createdAt,
