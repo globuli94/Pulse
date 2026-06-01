@@ -41,7 +41,14 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
   final FollowsRepository? _followsRepository;
 
   /// The authenticated user's UID used to build the author-ID filter.
-  final String _currentUserId;
+  String _currentUserId;
+
+  /// Called by [AuthBloc] listener when the user authenticates.
+  /// Updates the user ID and triggers a fresh feed subscription.
+  void startWatching(String userId) {
+    _currentUserId = userId;
+    add(const PostsFeedSubscriptionRequested());
+  }
 
   /// Loads (or reloads) the first page of the feed.
   ///
@@ -59,6 +66,15 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
           final followedIds = await _followsRepository.getFollowedUserIds(
             followerId: _currentUserId,
           );
+          // If user follows nobody, show empty state immediately.
+          if (followedIds.isEmpty) {
+            emit(const PostsFeedLoaded(
+              posts: [],
+              authorIds: [],
+              hasMore: false,
+            ));
+            return;
+          }
           authorIds = [_currentUserId, ...followedIds];
         } catch (_) {
           // Falls back to unfiltered feed if follows lookup fails.

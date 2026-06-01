@@ -655,3 +655,48 @@ All four count queries filter on a single field (`userId`, `followeeId`, `follow
 | `firebase-schema.md` — `postCount`, `followerCount`, `followingCount` removed from `users`; `likeCount` removed from `posts`; BREAKING callouts added; dynamic count query patterns documented | ✅ Done |
 | `schema/firestore.rules` — `postCount` removed from owner update allowed keys; `followerCount`/`followingCount` update rule deleted; `likeCount` update rule on `posts` deleted | ✅ Done |
 | `firestore.indexes.json` — no new composite index required; single-field auto-indexes are sufficient | ✅ Confirmed |
+
+---
+
+## Firestore Rules Audit — SOCAA-594 BUG-022: Feed Permission-Denied Verification
+
+**Audit date:** 2026-06-02
+**Classification:** Safe — verification only. No rules or indexes were changed.
+
+### Findings
+
+The [SOCAA-586](/SOCAA/issues/SOCAA-586) change (BUG-019: remove stored counter fields) removed only the `FieldValue.increment` update rules from `posts` and `users`. The `allow read` rules on `posts` and `follows` were **not altered**.
+
+| Rule | Location | Status |
+|---|---|---|
+| `posts`: `allow read: if request.auth != null` | `schema/firestore.rules` line 55 | ✅ Present and correct |
+| `follows`: `allow read: if request.auth != null` | `schema/firestore.rules` line 34 | ✅ Present and correct |
+| Composite index `posts (userId ASC, createdAt DESC)` | `firestore.indexes.json` | ✅ Present and correct |
+
+### Feed Query Access Patterns — Verified
+
+| Operation | Who | Collection | Rule in Effect |
+|---|---|---|---|
+| Read posts in feed (`userId whereIn followeeIds`, `orderBy createdAt DESC`) | Authenticated user | `posts` | `allow read: if request.auth != null` ✅ |
+| Read follows (`followerId == currentUid`) | Authenticated user | `follows` | `allow read: if request.auth != null` ✅ |
+
+**No changes to `schema/firestore.rules` or `firestore.indexes.json` were required.** Both files already satisfy all acceptance criteria.
+
+### Deploy
+
+Rules and indexes were re-deployed to Firebase project `pulse-94821` to confirm the live state matches the repository:
+
+```
+firebase deploy --only firestore:rules,firestore:indexes
+✔  cloud.firestore: rules file schema/firestore.rules compiled successfully
+✔  firestore: released rules schema/firestore.rules to cloud.firestore
+✔  firestore: deployed indexes in firestore.indexes.json successfully
+✔  Deploy complete!
+```
+
+| Deliverable | Status |
+|---|---|
+| `schema/firestore.rules` — `posts` and `follows` `allow read` rules verified intact | ✅ Confirmed |
+| `firestore.indexes.json` — composite index `(userId ASC, createdAt DESC)` on `posts` verified present | ✅ Confirmed |
+| `firebase-schema.md` — audit section added | ✅ Done |
+| Firebase deploy — rules and indexes live on `pulse-94821` | ✅ Deployed |

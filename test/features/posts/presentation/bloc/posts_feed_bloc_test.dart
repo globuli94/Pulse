@@ -19,6 +19,11 @@ void main() {
     setUp(() {
       mockPostsRepository = MockPostsRepository();
       mockFollowsRepository = MockFollowsRepository();
+
+      // Default stub: user follows nobody → immediate empty-state path
+      when(() => mockFollowsRepository.getFollowedUserIds(followerId: any(named: 'followerId')))
+          .thenAnswer((_) async => []);
+
       postsFeedBloc = PostsFeedBloc(
         repository: mockPostsRepository,
         followsRepository: mockFollowsRepository,
@@ -34,9 +39,13 @@ void main() {
       test(
           'emits [PostsFeedLoading, PostsFeedLoaded] when stream succeeds with empty list',
           () async {
+        when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
+            .thenAnswer((_) async => ['user2']);
+
         when(() => mockPostsRepository.fetchFeed(
-              cursor: any(named: 'cursor'),
+              cursor: null,
               limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
             )).thenAnswer((_) async => const PostsFeedPage(
               posts: [],
               hasMore: false,
@@ -61,9 +70,13 @@ void main() {
           imageUrl: null,
         );
 
+        when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
+            .thenAnswer((_) async => ['user2']);
+
         when(() => mockPostsRepository.fetchFeed(
-              cursor: any(named: 'cursor'),
+              cursor: null,
               limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
             )).thenAnswer((_) async => PostsFeedPage(
               posts: [testPost],
               hasMore: false,
@@ -78,9 +91,13 @@ void main() {
       });
 
       test('emits PostsFeedError when stream throws', () async {
+        when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
+            .thenAnswer((_) async => ['user2']);
+
         when(() => mockPostsRepository.fetchFeed(
-              cursor: any(named: 'cursor'),
+              cursor: null,
               limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
             )).thenThrow(Exception('Fetch error'));
 
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
@@ -111,10 +128,14 @@ void main() {
           imageUrl: null,
         );
 
+        when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
+            .thenAnswer((_) async => ['user2']);
+
         // Page 1: one post, more available
         when(() => mockPostsRepository.fetchFeed(
               cursor: null,
               limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
             )).thenAnswer((_) async => PostsFeedPage(
               posts: [post1],
               hasMore: true,
@@ -125,6 +146,7 @@ void main() {
         when(() => mockPostsRepository.fetchFeed(
               cursor: 'cursor-page-2',
               limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
             )).thenAnswer((_) async => PostsFeedPage(
               posts: [post2],
               hasMore: false,
@@ -217,38 +239,25 @@ void main() {
         expect((postsFeedBloc.state as PostsFeedLoaded).posts.length, equals(1));
       });
 
-      test('feed with no followed users shows only own posts', () async {
-        final ownPost = Post(
-          id: '1',
-          userId: 'user1',
-          displayName: 'User 1',
-          text: 'Own post',
-          createdAt: DateTime(2024, 1, 1),
-          imageUrl: null,
-        );
-
+      test(
+          'feed with no followed users emits empty PostsFeedLoaded without calling fetchFeed',
+          () async {
         when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
             .thenAnswer((_) async => []);
-
-        when(() => mockPostsRepository.fetchFeed(
-              cursor: null,
-              limit: any(named: 'limit'),
-              authorIds: ['user1'],
-            )).thenAnswer((_) async => PostsFeedPage(
-              posts: [ownPost],
-              hasMore: false,
-            ));
 
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
         await Future.delayed(const Duration(milliseconds: 100));
 
-        verify(() => mockPostsRepository.fetchFeed(
-              cursor: null,
+        // fetchFeed must NOT be called when followedIds is empty
+        verifyNever(() => mockPostsRepository.fetchFeed(
+              cursor: any(named: 'cursor'),
               limit: any(named: 'limit'),
-              authorIds: ['user1'],
-            )).called(1);
+              authorIds: any(named: 'authorIds'),
+            ));
 
         expect(postsFeedBloc.state, isA<PostsFeedLoaded>());
+        expect((postsFeedBloc.state as PostsFeedLoaded).posts, isEmpty);
+        expect((postsFeedBloc.state as PostsFeedLoaded).hasMore, isFalse);
       });
 
       test('next page uses same authorIds', () async {
@@ -313,6 +322,56 @@ void main() {
             )).called(1);
 
         expect((postsFeedBloc.state as PostsFeedLoaded).posts.length, equals(2));
+      });
+    });
+
+    group('startWatching', () {
+      test(
+          'sets userId and fires subscription so feed loads correctly',
+          () async {
+        // Bloc created with empty userId (simulates auth not yet resolved)
+        final bloc = PostsFeedBloc(
+          repository: mockPostsRepository,
+          followsRepository: mockFollowsRepository,
+          currentUserId: '',
+        );
+        addTearDown(bloc.close);
+
+        final followedPost = Post(
+          id: 'p1',
+          userId: 'user2',
+          displayName: 'User 2',
+          text: 'Hello',
+          createdAt: DateTime(2024, 1, 1),
+          imageUrl: null,
+        );
+
+        when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
+            .thenAnswer((_) async => ['user2']);
+
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: null,
+              limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
+            )).thenAnswer((_) async => PostsFeedPage(
+              posts: [followedPost],
+              hasMore: false,
+            ));
+
+        // Simulate auth resolving after bloc creation
+        bloc.startWatching('user1');
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        verify(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1')).called(1);
+        verify(() => mockPostsRepository.fetchFeed(
+              cursor: null,
+              limit: any(named: 'limit'),
+              authorIds: ['user1', 'user2'],
+            )).called(1);
+
+        expect(bloc.state, isA<PostsFeedLoaded>());
+        expect((bloc.state as PostsFeedLoaded).posts.length, equals(1));
+        expect((bloc.state as PostsFeedLoaded).posts.first.id, equals('p1'));
       });
     });
   });

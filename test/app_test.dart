@@ -25,7 +25,7 @@ void main() {
 
     when(() => mockAuthBloc.state).thenReturn(Authenticated(testUser));
     when(() => mockAuthBloc.stream).thenAnswer(
-      (_) => Stream.value(Authenticated(testUser)),
+      (_) => const Stream.empty(),
     );
 
     // Create a simple router for testing
