@@ -80,7 +80,6 @@ class _FeedScreenState extends State<FeedScreen> {
               onRefresh: _onRefresh,
               child: state.posts.isEmpty
                   ? ListView(
-                      padding: const EdgeInsets.only(top: kToolbarHeight),
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: const [
                         Center(
@@ -91,7 +90,6 @@ class _FeedScreenState extends State<FeedScreen> {
                     )
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.only(top: kToolbarHeight),
                       physics: const AlwaysScrollableScrollPhysics(),
                       // Extra slot for bottom loading indicator.
                       itemCount:

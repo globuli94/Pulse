@@ -2,8 +2,6 @@
 //
 // ShellScreen — main navigation shell with a bottom navigation bar.
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -48,20 +46,7 @@ class ShellScreen extends StatelessWidget {
     return BlocBuilder<ShellTabCubit, int>(
       builder: (context, currentIndex) {
         return Scaffold(
-          extendBodyBehindAppBar: true,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            flexibleSpace: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ),
             title: Text(
               _tabTitles[currentIndex],
               style: TextStyle(
