@@ -66,7 +66,9 @@ class _ConversationsBody extends StatelessWidget {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.only(top: kToolbarHeight),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + kToolbarHeight,
+              ),
               itemCount: state.conversations.length,
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
