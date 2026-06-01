@@ -52,13 +52,13 @@
 | Field | Firestore Type | Required | Description |
 |---|---|---|---|
 | `userId` | string | required | Firebase Auth UID of the post author |
-| `displayName` | string | required | Author's display name captured at post time |
-| `avatarUrl` | string | optional | Author's avatar URL captured at post time; null if no avatar |
 | `text` | string | required | Post body text |
 | `imageUrl` | string | optional | Download URL for the post image in Firebase Storage; null if no image |
 | `createdAt` | timestamp | required | Server timestamp set on creation |
 
 > ⚠️ **Breaking change (SOCAA-586):** `likeCount` field has been removed. Like count is now derived dynamically via `likes.where('postId', '==', postId).count()`.
+
+> ⚠️ **Breaking change (SOCAA-593):** `displayName` and `avatarUrl` fields have been removed from post documents. Author display info is resolved at read time from `users/{userId}` — join on `userId` to display the author's current name and avatar.
 
 **Access Patterns:**
 
@@ -67,7 +67,6 @@
 | Authenticated user | Read any post | `request.auth != null` |
 | Authenticated user | Create own post | `request.auth.uid == request.resource.data.userId` |
 | Author | Delete own post | `request.auth.uid == resource.data.userId` |
-| Author | Update `displayName` and `avatarUrl` on own posts | `request.auth.uid == resource.data.userId` — profile update propagation (batch write from `updateProfile`) |
 
 **Query Patterns:**
 
@@ -655,6 +654,48 @@ All four count queries filter on a single field (`userId`, `followeeId`, `follow
 | `firebase-schema.md` — `postCount`, `followerCount`, `followingCount` removed from `users`; `likeCount` removed from `posts`; BREAKING callouts added; dynamic count query patterns documented | ✅ Done |
 | `schema/firestore.rules` — `postCount` removed from owner update allowed keys; `followerCount`/`followingCount` update rule deleted; `likeCount` update rule on `posts` deleted | ✅ Done |
 | `firestore.indexes.json` — no new composite index required; single-field auto-indexes are sufficient | ✅ Confirmed |
+
+---
+
+## Firestore Rules Audit — SOCAA-593: Remove displayName/avatarUrl from posts
+
+**Audit date:** 2026-06-02
+**Classification:** BREAKING — removes `displayName` and `avatarUrl` from `posts` documents and removes the corresponding `allow update` rule that permitted author-owned profile-sync writes.
+
+### Migration Path
+
+No Firestore data migration is required. Post documents that still contain `displayName` or `avatarUrl` will simply have unused fields; they do not need to be backfilled or deleted. Author display info is now resolved at read time by joining `users/{userId}`.
+
+### Collections Affected
+
+| Collection | Field Removed | Replacement |
+|---|---|---|
+| `posts` | `displayName` | Resolved at read time from `users/{userId}.displayName` |
+| `posts` | `avatarUrl` | Resolved at read time from `users/{userId}.avatarUrl` |
+
+### Rules Changes
+
+| Rule Removed | Collection | Reason |
+|---|---|---|
+| `allow update` for `hasOnly(['displayName', 'avatarUrl'])` | `posts` | Profile-sync batch writes no longer target post documents; rule removed entirely |
+
+### Access Patterns
+
+| Operation | Collection | Who | Rule in Effect |
+|---|---|---|---|
+| Read post | `posts/{postId}` | Any authenticated user | `allow read: if request.auth != null` ✅ — no change |
+| Create post | `posts/{postId}` | Authenticated author | `allow create` when `request.auth.uid == request.resource.data.userId` ✅ — no change; `displayName`/`avatarUrl` no longer written |
+| Delete post | `posts/{postId}` | Author | `allow delete` when `request.auth.uid == resource.data.userId` ✅ — no change |
+
+### Composite Index Determination
+
+No new queries introduced. No composite index changes required.
+
+| Deliverable | Status |
+|---|---|
+| `firebase-schema.md` — `displayName` and `avatarUrl` removed from `posts` field table; BREAKING callout added; update access pattern row removed | ✅ Done |
+| `schema/firestore.rules` — `allow update` rule for `displayName`/`avatarUrl` on `posts` removed | ✅ Done |
+| `firestore.indexes.json` — no composite index required; no changes needed | ✅ Confirmed |
 
 ---
 
