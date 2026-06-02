@@ -52,8 +52,6 @@ class CreatePostBloc extends Bloc<CreatePostEvent, CreatePostState> {
       await _repository.createPost(
         text: event.text,
         userId: event.userId,
-        displayName: event.displayName,
-        avatarUrl: event.avatarUrl,
         image: image,
       );
       emit(const CreatePostSuccess());

@@ -64,7 +64,6 @@ void main() {
         final testPost = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'Test User',
           text: 'Test post',
           createdAt: DateTime(2024, 1, 1),
           imageUrl: null,
@@ -113,7 +112,6 @@ void main() {
         final post1 = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'Test User 1',
           text: 'Test post 1',
           createdAt: DateTime(2024, 1, 1),
           imageUrl: null,
@@ -122,7 +120,6 @@ void main() {
         final post2 = Post(
           id: '2',
           userId: 'user2',
-          displayName: 'Test User 2',
           text: 'Test post 2',
           createdAt: DateTime(2024, 1, 2),
           imageUrl: null,
@@ -208,7 +205,6 @@ void main() {
         final testPost = Post(
           id: '1',
           userId: 'user2',
-          displayName: 'User 2',
           text: 'User 2 post',
           createdAt: DateTime(2024, 1, 1),
           imageUrl: null,
@@ -264,7 +260,6 @@ void main() {
         final post1 = Post(
           id: '1',
           userId: 'user2',
-          displayName: 'User 2',
           text: 'Post 1',
           createdAt: DateTime(2024, 1, 1),
           imageUrl: null,
@@ -273,7 +268,6 @@ void main() {
         final post2 = Post(
           id: '2',
           userId: 'user3',
-          displayName: 'User 3',
           text: 'Post 2',
           createdAt: DateTime(2024, 1, 2),
           imageUrl: null,
@@ -340,7 +334,6 @@ void main() {
         final followedPost = Post(
           id: 'p1',
           userId: 'user2',
-          displayName: 'User 2',
           text: 'Hello',
           createdAt: DateTime(2024, 1, 1),
           imageUrl: null,

@@ -3,11 +3,9 @@
 // ProfileBloc — manages global user profile state.
 
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../features/auth/domain/repositories/auth_repository.dart';
-import '../../../posts/domain/repositories/posts_repository.dart';
 import '../../../profile/domain/entities/user_profile.dart';
 import '../../../profile/domain/repositories/profile_repository.dart';
 
@@ -22,10 +20,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ProfileBloc({
     required ProfileRepository profileRepository,
     required AuthRepository authRepository,
-    required PostsRepository postsRepository,
   })  : _profileRepository = profileRepository,
         _authRepository = authRepository,
-        _postsRepository = postsRepository,
         super(const ProfileInitial()) {
     on<ProfileLoadRequested>(_onProfileLoadRequested);
     on<ProfileUpdateRequested>(_onProfileUpdateRequested);
@@ -35,7 +31,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   final ProfileRepository _profileRepository;
   final AuthRepository _authRepository;
-  final PostsRepository _postsRepository;
 
   Future<void> _onProfileLoadRequested(
     ProfileLoadRequested event,
@@ -82,18 +77,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
       final updatedProfile = await _profileRepository.getProfile(event.uid);
       emit(ProfileUpdateSuccess(profile: updatedProfile));
-
-      // Best-effort: propagate the new name/avatar to existing posts.
-      // A failure here must not surface as a profile-save failure.
-      try {
-        await _postsRepository.updateAuthorInfoOnPosts(
-          userId: event.uid,
-          displayName: updatedProfile.displayName,
-          avatarUrl: updatedProfile.avatarUrl,
-        );
-      } catch (e) {
-        debugPrint('ProfileBloc: updateAuthorInfoOnPosts failed: $e');
-      }
     } catch (e) {
       emit(ProfileError(message: e.toString()));
     }

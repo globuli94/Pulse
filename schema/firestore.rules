@@ -62,11 +62,6 @@ service cloud.firestore {
       allow delete: if request.auth != null
                     && request.auth.uid == resource.data.userId;
 
-      // Post author may update displayName and avatarUrl on their own posts (profile update propagation)
-      allow update: if request.auth != null
-                    && request.auth.uid == resource.data.userId
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['displayName', 'avatarUrl']);
     }
 
     // ---------------------------------------------------------------

@@ -31,4 +31,7 @@ abstract class ProfileRemoteDataSource {
   /// 2. Deletes `avatars/{uid}` from Firebase Storage (swallows NotFound).
   /// 3. Deletes the Firebase Auth account.
   Future<void> deleteAccount();
+
+  /// Streams `displayName` and `avatarUrl` from `users/{uid}`.
+  Stream<({String displayName, String? avatarUrl})> watchUserDisplayInfo(String uid);
 }

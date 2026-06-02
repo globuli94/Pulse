@@ -31,7 +31,7 @@ void main() {
     });
 
     test(
-      'updateProfile with displayName batch-updates posts for that user',
+      'updateProfile with displayName updates user document only — does not touch posts',
       () async {
         final uid = 'uid1';
         final oldDisplayName = 'Old Name';
@@ -46,13 +46,12 @@ void main() {
               'email': 'test@example.com',
             });
 
-        // Arrange: create a post document for this user
+        // Arrange: create a post document for this user (no displayName — live join pattern)
         await fakeFirestore
             .collection('posts')
             .doc('post1')
             .set({
               'userId': uid,
-              'displayName': oldDisplayName,
               'text': 'Test post',
               'createdAt': Timestamp.now(),
             });
@@ -68,18 +67,17 @@ void main() {
             await fakeFirestore.collection('users').doc(uid).get();
         expect(userDoc['displayName'], newDisplayName);
 
-        // Assert: verify post document was batch-updated
+        // Assert: post document is untouched (no displayName written to posts)
         final postDoc =
             await fakeFirestore.collection('posts').doc('post1').get();
-        expect(postDoc['displayName'], newDisplayName);
+        expect(postDoc.data()?.containsKey('displayName'), isFalse);
       },
     );
 
     test(
-      'updateProfile with avatarUrl batch-updates posts for that user',
+      'updateProfile with avatarUrl updates user document only — does not touch posts',
       () async {
         final uid = 'uid2';
-        final displayName = 'User Name';
         final oldAvatarUrl = 'https://old.url/avatar.jpg';
         final newAvatarUrl = 'https://new.url/avatar.jpg';
 
@@ -88,19 +86,17 @@ void main() {
             .collection('users')
             .doc(uid)
             .set({
-              'displayName': displayName,
+              'displayName': 'User Name',
               'avatarUrl': oldAvatarUrl,
               'email': 'test2@example.com',
             });
 
-        // Arrange: create a post document for this user
+        // Arrange: create a post document for this user (no avatarUrl — live join pattern)
         await fakeFirestore
             .collection('posts')
             .doc('post2')
             .set({
               'userId': uid,
-              'displayName': displayName,
-              'avatarUrl': oldAvatarUrl,
               'text': 'Another test post',
               'createdAt': Timestamp.now(),
             });
@@ -116,15 +112,15 @@ void main() {
             await fakeFirestore.collection('users').doc(uid).get();
         expect(userDoc['avatarUrl'], newAvatarUrl);
 
-        // Assert: verify post document was batch-updated
+        // Assert: post document is untouched (no avatarUrl written to posts)
         final postDoc =
             await fakeFirestore.collection('posts').doc('post2').get();
-        expect(postDoc['avatarUrl'], newAvatarUrl);
+        expect(postDoc.data()?.containsKey('avatarUrl'), isFalse);
       },
     );
 
     test(
-      'updateProfile with displayName and avatarUrl batch-updates posts',
+      'updateProfile with displayName and avatarUrl updates user document — does not touch posts',
       () async {
         final uid = 'uid3';
         final newDisplayName = 'Updated Name';
@@ -140,14 +136,12 @@ void main() {
               'email': 'test3@example.com',
             });
 
-        // Arrange: create multiple post documents for this user
+        // Arrange: create post documents (no displayName/avatarUrl — live join pattern)
         await fakeFirestore
             .collection('posts')
             .doc('post3a')
             .set({
               'userId': uid,
-              'displayName': 'Old Name',
-              'avatarUrl': 'https://old.url/avatar.jpg',
               'text': 'Post 1',
               'createdAt': Timestamp.now(),
             });
@@ -157,61 +151,63 @@ void main() {
             .doc('post3b')
             .set({
               'userId': uid,
-              'displayName': 'Old Name',
-              'avatarUrl': 'https://old.url/avatar.jpg',
               'text': 'Post 2',
               'createdAt': Timestamp.now(),
             });
 
-        // Act: update profile with new displayName and avatarUrl
+        // Act: update profile
         await dataSource.updateProfile(
           uid: uid,
           displayName: newDisplayName,
           avatarUrl: newAvatarUrl,
         );
 
-        // Assert: verify both posts were updated
+        // Assert: user doc updated
+        final userDoc =
+            await fakeFirestore.collection('users').doc(uid).get();
+        expect(userDoc['displayName'], newDisplayName);
+        expect(userDoc['avatarUrl'], newAvatarUrl);
+
+        // Assert: posts are untouched (no displayName/avatarUrl written)
         final post3a =
             await fakeFirestore.collection('posts').doc('post3a').get();
-        expect(post3a['displayName'], newDisplayName);
-        expect(post3a['avatarUrl'], newAvatarUrl);
+        expect(post3a.data()?.containsKey('displayName'), isFalse);
+        expect(post3a.data()?.containsKey('avatarUrl'), isFalse);
 
         final post3b =
             await fakeFirestore.collection('posts').doc('post3b').get();
-        expect(post3b['displayName'], newDisplayName);
-        expect(post3b['avatarUrl'], newAvatarUrl);
+        expect(post3b.data()?.containsKey('displayName'), isFalse);
+        expect(post3b.data()?.containsKey('avatarUrl'), isFalse);
       },
     );
 
     test(
-      'updateProfile does not update posts of other users',
+      'updateProfile never touches any posts collection documents',
       () async {
         final uid1 = 'uid1';
         final uid2 = 'uid2';
-        final oldName = 'Old Name';
         final newName = 'New Name';
 
-        // Arrange: create posts for different users
+        // Arrange: create user docs
         await fakeFirestore.collection('users').doc(uid1).set({
-          'displayName': oldName,
+          'displayName': 'Old Name',
           'email': 'user1@example.com',
         });
 
         await fakeFirestore.collection('users').doc(uid2).set({
-          'displayName': oldName,
+          'displayName': 'Old Name',
           'email': 'user2@example.com',
         });
 
+        // Arrange: posts without displayName (live join pattern)
         await fakeFirestore.collection('posts').doc('post1').set({
           'userId': uid1,
-          'displayName': oldName,
           'text': 'Post by user 1',
           'createdAt': Timestamp.now(),
         });
 
         await fakeFirestore.collection('posts').doc('post2').set({
           'userId': uid2,
-          'displayName': oldName,
           'text': 'Post by user 2',
           'createdAt': Timestamp.now(),
         });
@@ -222,14 +218,19 @@ void main() {
           displayName: newName,
         );
 
-        // Assert: only uid1's post should be updated
+        // Assert: uid1 user doc updated
+        final user1Doc =
+            await fakeFirestore.collection('users').doc(uid1).get();
+        expect(user1Doc['displayName'], newName);
+
+        // Assert: neither post has displayName written (no propagation)
         final post1 =
             await fakeFirestore.collection('posts').doc('post1').get();
-        expect(post1['displayName'], newName);
+        expect(post1.data()?.containsKey('displayName'), isFalse);
 
         final post2 =
             await fakeFirestore.collection('posts').doc('post2').get();
-        expect(post2['displayName'], oldName); // Should remain unchanged
+        expect(post2.data()?.containsKey('displayName'), isFalse);
       },
     );
 

@@ -86,8 +86,6 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
   Future<void> createPost({
     required String text,
     required String userId,
-    required String displayName,
-    String? avatarUrl,
     XFile? image,
   }) async {
     final docRef = _firestore.collection('posts').doc();
@@ -103,11 +101,9 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
 
     final data = <String, dynamic>{
       'userId': userId,
-      'displayName': displayName,
       'text': text,
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (avatarUrl != null) data['avatarUrl'] = avatarUrl;
     if (imageUrl != null) data['imageUrl'] = imageUrl;
 
     await docRef.set(data);
@@ -227,27 +223,6 @@ class PostsFirebaseDataSource implements PostsRemoteDataSource {
         .where('postId', isEqualTo: postId)
         .snapshots()
         .map((snap) => snap.size);
-  }
-
-  @override
-  Future<void> updateAuthorInfoOnPosts({
-    required String userId,
-    required String displayName,
-    required String? avatarUrl,
-  }) async {
-    final snapshot = await _firestore
-        .collection('posts')
-        .where('userId', isEqualTo: userId)
-        .get();
-    if (snapshot.docs.isEmpty) return;
-    final batch = _firestore.batch();
-    for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {
-        'displayName': displayName,
-        'avatarUrl': avatarUrl,
-      });
-    }
-    await batch.commit();
   }
 
   @override

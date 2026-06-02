@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/home/presentation/bloc/shell_tab_cubit.dart';
+import '../../../../features/profile/domain/repositories/profile_repository.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/posts_repository.dart';
@@ -76,27 +77,36 @@ class _PostCardBody extends StatelessWidget {
                       context.push('/profile/${post.userId}');
                     }
                   },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ProfileAvatar(avatarUrl: post.avatarUrl, radius: 20),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: StreamBuilder<({String displayName, String? avatarUrl})>(
+                    stream: context
+                        .read<ProfileRepository>()
+                        .watchUserDisplayInfo(post.userId),
+                    builder: (context, snap) {
+                      final displayName = snap.data?.displayName ?? '';
+                      final avatarUrl = snap.data?.avatarUrl;
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            post.displayName,
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          Text(
-                            _relativeTime(post.createdAt),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                          ProfileAvatar(avatarUrl: avatarUrl, radius: 20),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              Text(
+                                _relativeTime(post.createdAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
                 const Spacer(),

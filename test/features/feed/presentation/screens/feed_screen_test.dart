@@ -12,6 +12,7 @@ import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/posts/presentation/bloc/like_event.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/posts/presentation/widgets/post_card.dart';
+import 'package:pulse/features/profile/domain/repositories/profile_repository.dart';
 
 class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState>
     implements PostsFeedBloc {}
@@ -19,6 +20,8 @@ class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState>
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockPostsRepository extends Mock implements PostsRepository {}
+
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
 void main() {
   setUpAll(() {
@@ -33,11 +36,13 @@ void main() {
     late MockPostsFeedBloc mockPostsFeedBloc;
     late MockAuthBloc mockAuthBloc;
     late MockPostsRepository mockPostsRepository;
+    late MockProfileRepository mockProfileRepository;
 
     setUp(() {
       mockPostsFeedBloc = MockPostsFeedBloc();
       mockAuthBloc = MockAuthBloc();
       mockPostsRepository = MockPostsRepository();
+      mockProfileRepository = MockProfileRepository();
 
       // Stub like-related methods to prevent async errors in PostCard initialisation
       when(() => mockPostsRepository.isLiked(
@@ -50,6 +55,10 @@ void main() {
           )).thenAnswer((_) => Stream.value(false));
       when(() => mockPostsRepository.watchLikeCount(any()))
           .thenAnswer((_) => const Stream.empty());
+
+      // Default: stream a generic author name for any userId
+      when(() => mockProfileRepository.watchUserDisplayInfo(any()))
+          .thenAnswer((_) => Stream.value((displayName: 'User One', avatarUrl: null)));
 
       // Mock authenticated user
       final testUser = AppUser(
@@ -86,7 +95,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Test post 1',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -94,7 +102,6 @@ void main() {
           Post(
             id: '2',
             userId: 'user2',
-            displayName: 'User Two',
             text: 'Test post 2',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -105,8 +112,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -172,7 +182,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Newest post',
             imageUrl: null,
             createdAt: now,
@@ -180,7 +189,6 @@ void main() {
           Post(
             id: '2',
             userId: 'user2',
-            displayName: 'User Two',
             text: 'Middle post',
             imageUrl: null,
             createdAt: now.subtract(const Duration(hours: 1)),
@@ -188,7 +196,6 @@ void main() {
           Post(
             id: '3',
             userId: 'user3',
-            displayName: 'User Three',
             text: 'Oldest post',
             imageUrl: null,
             createdAt: now.subtract(const Duration(hours: 2)),
@@ -199,8 +206,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -224,7 +234,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Test post',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -235,8 +244,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -259,8 +271,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(emptyState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -289,7 +304,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Test post',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -304,8 +318,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadingMoreState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -327,7 +344,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Test post',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -342,8 +358,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(noMoreState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -368,7 +387,6 @@ void main() {
           (index) => Post(
             id: '$index',
             userId: 'user$index',
-            displayName: 'User $index',
             text: 'Test post $index',
             imageUrl: null,
             createdAt: DateTime.now().subtract(Duration(seconds: index)),
@@ -384,8 +402,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -409,7 +430,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Test post',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -420,8 +440,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -431,6 +454,7 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
 
         // Verify PostCard is rendered with user information
         final postCard = find.byType(PostCard);
@@ -446,7 +470,6 @@ void main() {
           Post(
             id: '1',
             userId: 'user1',
-            displayName: 'User One',
             text: 'Test post',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -457,8 +480,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -468,6 +494,7 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
 
         expect(find.text('User One'), findsOneWidget);
       },
@@ -480,7 +507,6 @@ void main() {
           Post(
             id: '1',
             userId: 'test-uid',
-            displayName: 'User One',
             text: 'Test post',
             imageUrl: null,
             createdAt: DateTime.now(),
@@ -491,8 +517,11 @@ void main() {
         when(() => mockPostsFeedBloc.state).thenReturn(loadedState);
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: mockAuthBloc),
@@ -511,11 +540,14 @@ void main() {
     testWidgets(
       'tapping own post author row switches to Profile tab via ShellTabCubit',
       (WidgetTester tester) async {
-        final ownUserId = 'test-uid';
+        const ownUserId = 'test-uid';
+        // Override: stream 'Test User' for own post author
+        when(() => mockProfileRepository.watchUserDisplayInfo(ownUserId))
+            .thenAnswer((_) => Stream.value((displayName: 'Test User', avatarUrl: null)));
+
         final ownPost = Post(
           id: 'post-own',
           userId: ownUserId,
-          displayName: 'Test User',
           text: 'My own post',
           imageUrl: null,
           createdAt: DateTime.now(),
@@ -526,8 +558,11 @@ void main() {
         final shellTabCubit = ShellTabCubit();
 
         await tester.pumpWidget(
-          RepositoryProvider<PostsRepository>.value(
-            value: mockPostsRepository,
+          MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+              RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<ShellTabCubit>.value(value: shellTabCubit),
@@ -538,7 +573,7 @@ void main() {
             ),
           ),
         );
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         // Tap the author name
         await tester.tap(find.text('Test User'));

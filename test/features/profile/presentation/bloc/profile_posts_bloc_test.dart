@@ -14,7 +14,6 @@ void main() {
   final testPost = Post(
     id: 'post-1',
     userId: 'uid1',
-    displayName: 'Test User',
     text: 'Hello world',
     createdAt: DateTime(2024),
   );
@@ -78,7 +77,6 @@ void main() {
         final post1 = Post(
           id: 'post-1',
           userId: 'uid1',
-          displayName: 'Test User',
           text: 'First post',
           createdAt: DateTime(2024),
         );

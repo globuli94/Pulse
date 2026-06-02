@@ -10,7 +10,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../bloc/create_post_bloc.dart';
 import '../bloc/posts_feed_bloc.dart';
 
@@ -52,19 +51,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final authState = context.read<AuthBloc>().state;
       if (authState is! Authenticated) return;
 
-      final profileState = context.read<ProfileBloc>().state;
-      final displayName = profileState is ProfileLoaded
-          ? profileState.profile.displayName
-          : authState.user.displayName;
-      final avatarUrl =
-          profileState is ProfileLoaded ? profileState.profile.avatarUrl : null;
-
       context.read<CreatePostBloc>().add(
             CreatePostSubmitted(
               text: _textController.text.trim(),
               userId: authState.user.uid,
-              displayName: displayName,
-              avatarUrl: avatarUrl,
             ),
           );
     }
