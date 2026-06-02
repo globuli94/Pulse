@@ -10,6 +10,7 @@ import 'package:pulse/features/posts/domain/entities/post.dart';
 import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/posts/presentation/widgets/post_card.dart';
+import 'package:pulse/features/profile/domain/repositories/profile_repository.dart';
 
 class MockPostsFeedBloc extends Mock implements PostsFeedBloc {}
 
@@ -17,16 +18,20 @@ class MockAuthBloc extends Mock implements AuthBloc {}
 
 class MockPostsRepository extends Mock implements PostsRepository {}
 
+class MockProfileRepository extends Mock implements ProfileRepository {}
+
 void main() {
   group('PostCard', () {
     late MockPostsFeedBloc mockPostsFeedBloc;
     late MockAuthBloc mockAuthBloc;
     late MockPostsRepository mockPostsRepository;
+    late MockProfileRepository mockProfileRepository;
 
     setUp(() {
       mockPostsFeedBloc = MockPostsFeedBloc();
       mockAuthBloc = MockAuthBloc();
       mockPostsRepository = MockPostsRepository();
+      mockProfileRepository = MockProfileRepository();
 
       when(() => mockPostsFeedBloc.state).thenReturn(const PostsFeedLoaded(posts: []));
       when(() => mockPostsFeedBloc.stream).thenAnswer((_) => const Stream.empty());
@@ -39,11 +44,17 @@ void main() {
           )).thenAnswer((_) => Stream.value(false));
       when(() => mockPostsRepository.watchLikeCount(any()))
           .thenAnswer((_) => const Stream.empty());
+      // Default: stream 'John Doe' for any userId
+      when(() => mockProfileRepository.watchUserDisplayInfo(any()))
+          .thenAnswer((_) => Stream.value((displayName: 'John Doe', avatarUrl: null)));
     });
 
     Widget buildCard(Post post) {
-      return RepositoryProvider<PostsRepository>.value(
-        value: mockPostsRepository,
+      return MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
+          RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+        ],
         child: MaterialApp(
           home: MultiBlocProvider(
             providers: [
@@ -63,8 +74,11 @@ void main() {
       MockPostsRepository repo,
       MockAuthBloc authBloc,
     ) {
-      return RepositoryProvider<PostsRepository>.value(
-        value: repo,
+      return MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<PostsRepository>.value(value: repo),
+          RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
+        ],
         child: MultiBlocProvider(
           providers: [
             BlocProvider<AuthBloc>.value(value: authBloc),
@@ -79,13 +93,13 @@ void main() {
       final post = Post(
         id: '1',
         userId: 'user1',
-        displayName: 'John Doe',
         text: 'Hello world',
         createdAt: DateTime(2024, 1, 15, 10, 30),
         imageUrl: null,
       );
 
       await tester.pumpWidget(buildCard(post));
+      await tester.pumpAndSettle();
 
       expect(find.text('John Doe'), findsOneWidget);
     });
@@ -94,7 +108,6 @@ void main() {
       final post = Post(
         id: '1',
         userId: 'user1',
-        displayName: 'John Doe',
         text: 'This is my test post',
         createdAt: DateTime(2024, 1, 15, 10, 30),
         imageUrl: null,
@@ -109,7 +122,6 @@ void main() {
       final post = Post(
         id: '1',
         userId: 'user1',
-        displayName: 'John Doe',
         text: 'Hello world',
         createdAt: DateTime(2024, 1, 15, 10, 30),
         imageUrl: null,
@@ -128,7 +140,6 @@ void main() {
       final post = Post(
         id: '1',
         userId: 'current-user',
-        displayName: 'John Doe',
         text: 'Hello world',
         createdAt: DateTime(2024, 1, 15, 10, 30),
         imageUrl: null,
@@ -144,7 +155,6 @@ void main() {
       final post = Post(
         id: '1',
         userId: 'other-user',
-        displayName: 'John Doe',
         text: 'Hello world',
         createdAt: DateTime(2024, 1, 15, 10, 30),
         imageUrl: null,
@@ -161,7 +171,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -194,7 +203,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -220,7 +228,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -250,7 +257,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -288,7 +294,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -327,11 +332,14 @@ void main() {
     testWidgets(
       'BUG-001f: tapping own profile navigates to Profile tab instead of OtherProfileScreen',
       (WidgetTester tester) async {
+        // Override for own user: display name is 'Test User'
+        when(() => mockProfileRepository.watchUserDisplayInfo('current-user'))
+            .thenAnswer((_) => Stream.value((displayName: 'Test User', avatarUrl: null)));
+
         // Create a post where the author is the current user
         final post = Post(
           id: '1',
           userId: 'current-user', // Same as logged-in user
-          displayName: 'Test User',
           text: 'My own post',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -343,6 +351,7 @@ void main() {
             )).thenAnswer((_) async => false);
 
         await tester.pumpWidget(buildCard(post));
+        await tester.pumpAndSettle();
 
         // Verify the author name is rendered
         expect(find.text('Test User'), findsOneWidget);
@@ -364,7 +373,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,
@@ -399,7 +407,6 @@ void main() {
         final post = Post(
           id: '1',
           userId: 'user1',
-          displayName: 'John Doe',
           text: 'Hello world',
           createdAt: DateTime(2024, 1, 15, 10, 30),
           imageUrl: null,

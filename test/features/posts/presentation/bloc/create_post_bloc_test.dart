@@ -63,16 +63,12 @@ void main() {
         when(() => mockPostsRepository.createPost(
               text: any(named: 'text'),
               userId: any(named: 'userId'),
-              displayName: any(named: 'displayName'),
-              avatarUrl: any(named: 'avatarUrl'),
               image: any(named: 'image'),
             )).thenAnswer((_) async {});
 
         createPostBloc.add(const CreatePostSubmitted(
           text: 'Test post',
           userId: 'user-123',
-          displayName: 'Test User',
-          avatarUrl: null,
         ));
 
         await Future.delayed(const Duration(milliseconds: 200));
@@ -84,16 +80,12 @@ void main() {
         when(() => mockPostsRepository.createPost(
               text: any(named: 'text'),
               userId: any(named: 'userId'),
-              displayName: any(named: 'displayName'),
-              avatarUrl: any(named: 'avatarUrl'),
               image: any(named: 'image'),
             )).thenThrow(Exception('Upload failed'));
 
         createPostBloc.add(const CreatePostSubmitted(
           text: 'Test post',
           userId: 'user-123',
-          displayName: 'Test User',
-          avatarUrl: null,
         ));
 
         await Future.delayed(const Duration(milliseconds: 200));
@@ -105,16 +97,12 @@ void main() {
         when(() => mockPostsRepository.createPost(
               text: any(named: 'text'),
               userId: any(named: 'userId'),
-              displayName: any(named: 'displayName'),
-              avatarUrl: any(named: 'avatarUrl'),
               image: any(named: 'image'),
             )).thenAnswer((_) async {});
 
-        createPostBloc.add(CreatePostSubmitted(
+        createPostBloc.add(const CreatePostSubmitted(
           text: 'My test post',
           userId: 'user-123',
-          displayName: 'Test User',
-          avatarUrl: 'https://example.com/avatar.jpg',
         ));
 
         await Future.delayed(const Duration(milliseconds: 200));
@@ -122,8 +110,6 @@ void main() {
         verify(() => mockPostsRepository.createPost(
           text: 'My test post',
           userId: 'user-123',
-          displayName: 'Test User',
-          avatarUrl: 'https://example.com/avatar.jpg',
           image: any(named: 'image'),
         )).called(1);
       });
