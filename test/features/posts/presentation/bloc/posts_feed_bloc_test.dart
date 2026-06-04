@@ -236,20 +236,29 @@ void main() {
       });
 
       test(
-          'feed with no followed users emits empty PostsFeedLoaded without calling fetchFeed',
+          'feed with no followed users still fetches current user own posts',
           () async {
         when(() => mockFollowsRepository.getFollowedUserIds(followerId: 'user1'))
             .thenAnswer((_) async => []);
 
+        when(() => mockPostsRepository.fetchFeed(
+              cursor: null,
+              limit: any(named: 'limit'),
+              authorIds: ['user1'],
+            )).thenAnswer((_) async => const PostsFeedPage(
+              posts: [],
+              hasMore: false,
+            ));
+
         postsFeedBloc.add(const PostsFeedSubscriptionRequested());
         await Future.delayed(const Duration(milliseconds: 100));
 
-        // fetchFeed must NOT be called when followedIds is empty
-        verifyNever(() => mockPostsRepository.fetchFeed(
-              cursor: any(named: 'cursor'),
+        // fetchFeed IS called with only the current user so own posts always appear
+        verify(() => mockPostsRepository.fetchFeed(
+              cursor: null,
               limit: any(named: 'limit'),
-              authorIds: any(named: 'authorIds'),
-            ));
+              authorIds: ['user1'],
+            )).called(1);
 
         expect(postsFeedBloc.state, isA<PostsFeedLoaded>());
         expect((postsFeedBloc.state as PostsFeedLoaded).posts, isEmpty);
