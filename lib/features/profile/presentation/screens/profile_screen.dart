@@ -116,16 +116,19 @@ class _ProfileScreenBody extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Column(
                   children: [
-                    ProfileAvatar(avatarUrl: profile.avatarUrl, radius: 80),
-                    const SizedBox(height: 16),
+                    ProfileAvatar(avatarUrl: profile.avatarUrl, radius: 50),
+                    const SizedBox(height: 8),
                     Text(
                       profile.displayName,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       profile.bio.isNotEmpty ? profile.bio : 'No bio yet.',
                       style:
@@ -134,7 +137,7 @@ class _ProfileScreenBody extends StatelessWidget {
                               ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       '${profile.postCount} posts',
                       style: Theme.of(context).textTheme.labelMedium,
@@ -175,12 +178,12 @@ class _ProfileScreenBody extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     FilledButton(
                       onPressed: onEditProfile,
                       child: const Text('Edit Profile'),
                     ),
-                    const Divider(height: 32),
+                    const Divider(height: 16),
                   ],
                 ),
               ),

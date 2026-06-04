@@ -58,7 +58,12 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
     PostsFeedSubscriptionRequested event,
     Emitter<PostsFeedState> emit,
   ) async {
-    emit(const PostsFeedLoading());
+    // Only show the loading spinner on the very first load. When auth resolves
+    // and startWatching() triggers a refresh, posts are already on-screen —
+    // emitting PostsFeedLoading again would cause a visible flicker and would
+    // leave the feed stuck on a spinner if the second round-trip is slow.
+    final alreadyLoaded = state is PostsFeedLoaded;
+    if (!alreadyLoaded) emit(const PostsFeedLoading());
     try {
       var authorIds = const <String>[];
       if (_followsRepository != null && _currentUserId.isNotEmpty) {
@@ -66,19 +71,10 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
           final followedIds = await _followsRepository.getFollowedUserIds(
             followerId: _currentUserId,
           );
-          // If user follows nobody, show empty state immediately.
-          if (followedIds.isEmpty) {
-            emit(const PostsFeedLoaded(
-              posts: [],
-              authorIds: [],
-              hasMore: false,
-            ));
-            return;
-          }
+          // Include the current user so their own posts always appear.
           authorIds = [_currentUserId, ...followedIds];
         } catch (_) {
           // Falls back to unfiltered feed if follows lookup fails.
-          authorIds = const [];
         }
       }
       final page = await _repository.fetchFeed(
@@ -93,7 +89,8 @@ class PostsFeedBloc extends Bloc<PostsFeedEvent, PostsFeedState> {
         ),
       );
     } catch (e) {
-      emit(PostsFeedError(error: e.toString()));
+      // Don't overwrite existing posts with an error on a background refresh.
+      if (!alreadyLoaded) emit(PostsFeedError(error: e.toString()));
     }
   }
 

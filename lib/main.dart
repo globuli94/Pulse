@@ -189,6 +189,7 @@ class PulseApp extends StatelessWidget {
         ],
         child: MaterialApp.router(
           title: 'Pulse',
+          debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           routerConfig: _router,
           builder: (context, child) => BlocListener<AuthBloc, AuthState>(

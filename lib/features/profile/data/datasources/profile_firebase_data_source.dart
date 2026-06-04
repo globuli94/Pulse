@@ -45,9 +45,22 @@ class ProfileFirebaseDataSource implements ProfileRemoteDataSource {
         .count()
         .get();
 
-    final doc = await docFuture;
+    var doc = await docFuture;
     if (!doc.exists || doc.data() == null) {
-      throw Exception('User profile not found for uid: $uid');
+      // No Firestore document yet — create a default profile so the screen
+      // does not crash for newly-created or seed accounts.
+      await _firestore.collection('users').doc(uid).set(
+        {
+          'uid': uid,
+          'displayName':
+              _firebaseAuth.currentUser?.displayName ?? '',
+          'bio': '',
+          'avatarUrl': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      doc = await _firestore.collection('users').doc(uid).get();
     }
     final postCountSnap = await postCountFuture;
     final followerCountSnap = await followerCountFuture;
