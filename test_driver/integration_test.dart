@@ -10,7 +10,7 @@ Future<void> main() => integrationDriver(
     for (final entry in data.entries) {
       final bytes = base64Decode(entry.value as String);
       File('screenshots/${entry.key}.png').writeAsBytesSync(bytes);
-      print('Saved screenshots/${entry.key}.png');
+      stderr.writeln('Saved screenshots/${entry.key}.png');
     }
   },
 );
