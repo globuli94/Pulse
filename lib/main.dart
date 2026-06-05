@@ -13,6 +13,9 @@ import 'package:go_router/go_router.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/datasources/auth_firebase_data_source.dart';
+import 'features/comments/data/datasources/comments_firebase_data_source.dart';
+import 'features/comments/data/repositories/comments_repository_impl.dart';
+import 'features/comments/domain/repositories/comments_repository.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -130,6 +133,13 @@ class PulseApp extends StatelessWidget {
         RepositoryProvider<NotificationsRepository>(
           create: (context) => NotificationsRepositoryImpl(
             dataSource: NotificationsFirebaseDataSource(
+              firestore: FirebaseFirestore.instance,
+            ),
+          ),
+        ),
+        RepositoryProvider<CommentsRepository>(
+          create: (context) => CommentsRepositoryImpl(
+            dataSource: CommentsFirebaseDataSource(
               firestore: FirebaseFirestore.instance,
             ),
           ),

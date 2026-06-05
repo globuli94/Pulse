@@ -8,6 +8,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/forgot_password_bloc.dart';
+import '../../features/comments/domain/repositories/comments_repository.dart';
+import '../../features/comments/presentation/bloc/comments_bloc.dart';
+import '../../features/comments/presentation/screens/comments_screen.dart';
 import '../../features/notifications/domain/repositories/notifications_repository.dart';
 import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
@@ -178,6 +181,28 @@ GoRouter createAppRouter(AuthBloc authBloc, AuthRepository authRepository) {
               repository: context.read<NotificationsRepository>(),
             )..add(NotificationsSubscriptionRequested(userId: currentUserId)),
             child: const NotificationsScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/post/:postId/comments',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          final authState = context.read<AuthBloc>().state;
+          final currentUserId =
+              authState is Authenticated ? authState.user.uid : '';
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider<CommentsBloc>(
+                create: (_) =>
+                    CommentsBloc(repository: context.read<CommentsRepository>())
+                      ..add(CommentsSubscriptionRequested(postId: postId)),
+              ),
+            ],
+            child: CommentsScreen(
+              postId: postId,
+              currentUserId: currentUserId,
+            ),
           );
         },
       ),

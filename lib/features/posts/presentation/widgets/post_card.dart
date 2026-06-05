@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../features/comments/domain/repositories/comments_repository.dart';
+import '../../../../features/comments/presentation/bloc/comment_count_cubit.dart';
 import '../../../../features/home/presentation/bloc/shell_tab_cubit.dart';
 import '../../../../features/profile/domain/repositories/profile_repository.dart';
 import '../../../../features/profile/presentation/widgets/profile_avatar.dart';
@@ -32,14 +34,24 @@ class PostCard extends StatelessWidget {
     final authState = context.read<AuthBloc>().state;
     final currentUid = authState is Authenticated ? authState.user.uid : null;
 
-    return BlocProvider<LikeBloc>(
-      key: ValueKey(post.id),
-      create: (ctx) => LikeBloc(repository: ctx.read<PostsRepository>())
-        ..add(LikeInitialised(
-          postId: post.id,
-          userId: currentUid ?? '',
-          initialLikeCount: post.likeCount,
-        )),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<LikeBloc>(
+          key: ValueKey('like_${post.id}'),
+          create: (ctx) => LikeBloc(repository: ctx.read<PostsRepository>())
+            ..add(LikeInitialised(
+              postId: post.id,
+              userId: currentUid ?? '',
+              initialLikeCount: post.likeCount,
+            )),
+        ),
+        BlocProvider<CommentCountCubit>(
+          key: ValueKey('comment_count_${post.id}'),
+          create: (ctx) => CommentCountCubit(
+            repository: ctx.read<CommentsRepository>(),
+          )..startWatching(post.id),
+        ),
+      ],
       child: _PostCardBody(post: post, currentUid: currentUid),
     );
   }
@@ -143,6 +155,8 @@ class _PostCardBody extends StatelessWidget {
               postId: post.id,
               userId: currentUid ?? '',
             ),
+            // Comment count button
+            _CommentCountButton(postId: post.id),
           ],
         ),
       ),
@@ -157,6 +171,40 @@ class _PostCardBody extends StatelessWidget {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${(diff.inDays / 7).floor()}w ago';
+  }
+}
+
+class _CommentCountButton extends StatelessWidget {
+  const _CommentCountButton({required this.postId});
+  final String postId;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CommentCountCubit, int>(
+      builder: (context, count) {
+        return GestureDetector(
+          onTap: () => context.push('/post/$postId/comments'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$count',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
