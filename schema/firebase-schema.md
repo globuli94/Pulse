@@ -140,40 +140,6 @@
 
 ---
 
-### `comments` — path: `comments/{commentId}`
-
-**Purpose:** Stores one comment per document. Comments belong to a post and are authored by a user. Document ID is a server-generated unique ID.
-
-**Owner:** `authorId` field (Firebase Auth UID of the comment author)
-
-| Field | Firestore Type | Required | Description |
-|---|---|---|---|
-| `id` | string | required | Equals the document ID; stored redundantly for client convenience |
-| `postId` | string | required | ID of the post this comment belongs to |
-| `authorId` | string | required | Firebase Auth UID of the comment author |
-| `text` | string | required | Comment body text |
-| `createdAt` | timestamp | required | Server timestamp set on creation |
-
-> **Note:** Comment count is derived dynamically via `comments.where('postId', '==', postId).count().get()`. No `commentCount` field is stored on `posts`.
-
-**Access Patterns:**
-
-| Who | Operation | Condition |
-|---|---|---|
-| Any authenticated user | Read comments for a post | `request.auth != null` |
-| Authenticated user | Create own comment | `request.resource.data.authorId == request.auth.uid` |
-| Author | Delete own comment | `resource.data.authorId == request.auth.uid` |
-| Authenticated user | Write comment notification | `notifications/{notificationId}` — covered by existing `notifications` create rule |
-
-**Query Patterns:**
-
-| Collection | `.where()` | `.orderBy()` | Index Required | Purpose |
-|---|---|---|---|---|
-| `comments` | `postId == postId` | `createdAt ASC` | **Yes** (composite: `postId ASC`, `createdAt ASC`) | Fetch all comments for a post, oldest first |
-| `comments` | `postId == postId` | — (count only) | No additional index needed | Dynamic comment count for feed card |
-
----
-
 ### `notifications` — path: `notifications/{notificationId}`
 
 **Purpose:** Stores in-app notifications delivered to users when another user likes their post or follows them. Document ID is a server-generated unique ID.
@@ -184,7 +150,7 @@
 |---|---|---|---|
 | `id` | string | required | Equals the document ID; stored redundantly for client convenience |
 | `userId` | string | required | Firebase Auth UID of the recipient (post owner or followed user) |
-| `type` | string | required | Event type: `'like'`, `'follow'`, or `'comment'` |
+| `type` | string | required | Event type: `'like'` or `'follow'` |
 | `actorId` | string | required | Firebase Auth UID of the user who triggered the event; used by the UI to join `users/{actorId}` at read time to fetch the actor's current `avatarUrl` |
 | `actorDisplayName` | string | required | Display name of the actor captured at event time |
 | `postId` | string | optional | ID of the liked post; only present when `type == 'like'`; null for follow notifications |
@@ -289,7 +255,6 @@
 | `conversations` | `participantIds ARRAY_CONTAINS`, `lastMessageAt DESC` | Conversation list for a given user, most recent first |
 | `notifications` | `userId ASC`, `createdAt DESC` | All notifications for a user, newest first |
 | `notifications` | `userId ASC`, `isRead ASC` | Unread notifications count / badge query |
-| `comments` | `postId ASC`, `createdAt ASC` | Fetch all comments for a post, oldest first |
 | `users` | — | No composite index needed for displayName prefix query (range filter and orderBy on same field; single-field index sufficient) |
 
 **Note:** The profile posts query `.where('userId', '==', uid).orderBy('createdAt', 'desc')` uses the `posts (userId ASC, createdAt DESC)` index above. The followers/following queries (`.where('followedId', '==', uid)` and `.where('followerId', '==', uid)` without `orderBy` on a second field) require no composite index.
@@ -776,38 +741,3 @@ firebase deploy --only firestore:rules,firestore:indexes
 | `firestore.indexes.json` — composite index `(userId ASC, createdAt DESC)` on `posts` verified present | ✅ Confirmed |
 | `firebase-schema.md` — audit section added | ✅ Done |
 | Firebase deploy — rules and indexes live on `pulse-94821` | ✅ Deployed |
-
----
-
-## Firestore Rules Audit — SOCAA-737 FEAT: Comments on Posts
-
-**Audit date:** 2026-06-05
-**Classification:** Safe — additive only. New `comments` collection. No existing collection fields renamed or removed.
-
-### Collections Affected
-
-| Collection | Change | Notes |
-|---|---|---|
-| `comments` | New collection | One document per comment; scoped read/create/delete rules |
-| `notifications` | `type` field description updated to include `'comment'` | No schema structure change; additive |
-
-### Rules Coverage
-
-| Operation | Collection | Document | Who | Rule Added |
-|---|---|---|---|---|
-| Read comments for a post | `comments` | `{commentId}` | Any authenticated user | `allow read: if request.auth != null` ✅ |
-| Create own comment | `comments` | `{commentId}` | Authenticated user | `allow create` when `request.resource.data.authorId == request.auth.uid` ✅ |
-| Delete own comment | `comments` | `{commentId}` | Author | `allow delete` when `resource.data.authorId == request.auth.uid` ✅ |
-| Write comment notification | `notifications` | `{notificationId}` | Any authenticated user | Existing `allow create: if request.auth != null` ✅ — no change needed |
-
-### Composite Index
-
-| Collection | Fields | Required | Reason |
-|---|---|---|---|
-| `comments` | `postId ASC`, `createdAt ASC` | **Yes** | Equality filter on `postId` combined with `orderBy createdAt ASC` requires a composite index |
-
-| Deliverable | Status |
-|---|---|
-| `firebase-schema.md` — `comments` collection added; `notifications.type` description updated to include `'comment'`; composite indexes table updated | ✅ Done |
-| `schema/firestore.rules` — `comments` read/create/delete rules added | ✅ Done |
-| `firestore.indexes.json` — composite index (`postId ASC`, `createdAt ASC`) on `comments` added | ✅ Done |

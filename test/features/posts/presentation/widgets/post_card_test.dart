@@ -10,7 +10,6 @@ import 'package:pulse/features/posts/domain/entities/post.dart';
 import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/posts/presentation/widgets/post_card.dart';
-import 'package:pulse/features/comments/domain/repositories/comments_repository.dart';
 import 'package:pulse/features/profile/domain/repositories/profile_repository.dart';
 
 class MockPostsFeedBloc extends Mock implements PostsFeedBloc {}
@@ -21,22 +20,18 @@ class MockPostsRepository extends Mock implements PostsRepository {}
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
-class MockCommentsRepository extends Mock implements CommentsRepository {}
-
 void main() {
   group('PostCard', () {
     late MockPostsFeedBloc mockPostsFeedBloc;
     late MockAuthBloc mockAuthBloc;
     late MockPostsRepository mockPostsRepository;
     late MockProfileRepository mockProfileRepository;
-    late MockCommentsRepository mockCommentsRepository;
 
     setUp(() {
       mockPostsFeedBloc = MockPostsFeedBloc();
       mockAuthBloc = MockAuthBloc();
       mockPostsRepository = MockPostsRepository();
       mockProfileRepository = MockProfileRepository();
-      mockCommentsRepository = MockCommentsRepository();
 
       when(() => mockPostsFeedBloc.state).thenReturn(const PostsFeedLoaded(posts: []));
       when(() => mockPostsFeedBloc.stream).thenAnswer((_) => const Stream.empty());
@@ -52,8 +47,6 @@ void main() {
       // Default: stream 'John Doe' for any userId
       when(() => mockProfileRepository.watchUserDisplayInfo(any()))
           .thenAnswer((_) => Stream.value((displayName: 'John Doe', avatarUrl: null)));
-      when(() => mockCommentsRepository.watchCommentCount(any()))
-          .thenAnswer((_) => const Stream.empty());
     });
 
     Widget buildCard(Post post) {
@@ -61,7 +54,6 @@ void main() {
         providers: [
           RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
           RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-          RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
         ],
         child: MaterialApp(
           home: MultiBlocProvider(
@@ -86,7 +78,6 @@ void main() {
         providers: [
           RepositoryProvider<PostsRepository>.value(value: repo),
           RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-          RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
         ],
         child: MultiBlocProvider(
           providers: [

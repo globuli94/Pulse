@@ -12,7 +12,6 @@ import 'package:pulse/features/posts/domain/repositories/posts_repository.dart';
 import 'package:pulse/features/posts/presentation/bloc/like_event.dart';
 import 'package:pulse/features/posts/presentation/bloc/posts_feed_bloc.dart';
 import 'package:pulse/features/posts/presentation/widgets/post_card.dart';
-import 'package:pulse/features/comments/domain/repositories/comments_repository.dart';
 import 'package:pulse/features/profile/domain/repositories/profile_repository.dart';
 
 class MockPostsFeedBloc extends MockBloc<PostsFeedEvent, PostsFeedState>
@@ -23,8 +22,6 @@ class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 class MockPostsRepository extends Mock implements PostsRepository {}
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
-
-class MockCommentsRepository extends Mock implements CommentsRepository {}
 
 void main() {
   setUpAll(() {
@@ -40,14 +37,12 @@ void main() {
     late MockAuthBloc mockAuthBloc;
     late MockPostsRepository mockPostsRepository;
     late MockProfileRepository mockProfileRepository;
-    late MockCommentsRepository mockCommentsRepository;
 
     setUp(() {
       mockPostsFeedBloc = MockPostsFeedBloc();
       mockAuthBloc = MockAuthBloc();
       mockPostsRepository = MockPostsRepository();
       mockProfileRepository = MockProfileRepository();
-      mockCommentsRepository = MockCommentsRepository();
 
       // Stub like-related methods to prevent async errors in PostCard initialisation
       when(() => mockPostsRepository.isLiked(
@@ -64,8 +59,6 @@ void main() {
       // Default: stream a generic author name for any userId
       when(() => mockProfileRepository.watchUserDisplayInfo(any()))
           .thenAnswer((_) => Stream.value((displayName: 'User One', avatarUrl: null)));
-      when(() => mockCommentsRepository.watchCommentCount(any()))
-          .thenAnswer((_) => const Stream.empty());
 
       // Mock authenticated user
       final testUser = AppUser(
@@ -123,7 +116,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -218,7 +210,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -257,7 +248,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -285,7 +275,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -333,7 +322,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -374,7 +362,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -419,7 +406,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -458,7 +444,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -499,7 +484,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -537,7 +521,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
@@ -579,7 +562,6 @@ void main() {
             providers: [
               RepositoryProvider<PostsRepository>.value(value: mockPostsRepository),
               RepositoryProvider<ProfileRepository>.value(value: mockProfileRepository),
-              RepositoryProvider<CommentsRepository>.value(value: mockCommentsRepository),
             ],
             child: MultiBlocProvider(
               providers: [
