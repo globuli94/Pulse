@@ -438,5 +438,50 @@ void main() {
         expect(find.text('Hello world'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'SOCAA-783 #1: _LikeButton and _CommentCountButton are rendered horizontally on the same line',
+      (WidgetTester tester) async {
+        final post = Post(
+          id: '1',
+          userId: 'user1',
+          text: 'Hello world',
+          createdAt: DateTime(2024, 1, 15, 10, 30),
+          imageUrl: null,
+        );
+
+        when(() => mockPostsRepository.isLiked(
+              postId: '1',
+              userId: 'current-user',
+            )).thenAnswer((_) async => false);
+
+        await tester.pumpWidget(buildPostCard(post, mockPostsRepository, mockAuthBloc));
+        await tester.pumpAndSettle();
+
+        // Verify the like button is rendered with heart icon
+        final likeIconFinder = find.byIcon(Icons.favorite_border);
+        expect(likeIconFinder, findsOneWidget);
+
+        // Verify the comment button is rendered with chat icon
+        final commentIconFinder = find.byIcon(Icons.chat_bubble_outline);
+        expect(commentIconFinder, findsOneWidget);
+
+        // Get the positions of both icons on screen
+        final likeIconOffset = tester.getTopLeft(likeIconFinder);
+        final commentIconOffset = tester.getTopLeft(commentIconFinder);
+
+        // If they're on the same horizontal line, their Y coordinates should be similar
+        // (within the same row/line). Allow for some variation due to different icon sizes.
+        // The difference should be minimal if they're in the same Row.
+        final yDifference = (likeIconOffset.dy - commentIconOffset.dy).abs();
+        expect(
+          yDifference,
+          lessThan(40), // Allow for icon size variations but ensure they're on same line
+        );
+
+        // Comment icon should be to the right of the like icon
+        expect(commentIconOffset.dx, greaterThan(likeIconOffset.dx));
+      },
+    );
   });
 }
