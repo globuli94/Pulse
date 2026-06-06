@@ -9,8 +9,13 @@ on:
 jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -18,5 +23,20 @@ jobs:
         run: flutter pub get
       - name: Analyze
         run: flutter analyze
+      - name: Regenerate golden screenshots for CI platform
+        run: flutter test --update-goldens test/screenshots/comments_screenshots_test.dart
+      - name: Commit updated goldens if changed
+        run: |
+          git config user.email "noreply@paperclip.ing"
+          git config user.name "Paperclip CI"
+          git add screenshots/
+          if git diff --staged --quiet; then
+            echo "Golden files already up to date"
+          else
+            git commit -m "chore: update golden screenshots for ubuntu CI platform
+
+Co-Authored-By: Paperclip <noreply@paperclip.ing>"
+            git push
+          fi
       - name: Test
         run: flutter test
