@@ -82,6 +82,23 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // comments/{commentId}
+    // ---------------------------------------------------------------
+    match /comments/{commentId} {
+
+      // Any authenticated user may read comments (e.g. fetch all comments for a post)
+      allow read: if request.auth != null;
+
+      // Authenticated user may create a comment they author
+      allow create: if request.auth != null
+                    && request.resource.data.authorId == request.auth.uid;
+
+      // Author may delete their own comment
+      allow delete: if request.auth != null
+                    && resource.data.authorId == request.auth.uid;
+    }
+
+    // ---------------------------------------------------------------
     // notifications/{notificationId}
     // ---------------------------------------------------------------
     match /notifications/{notificationId} {
