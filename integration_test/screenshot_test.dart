@@ -1,6 +1,6 @@
 // integration_test/screenshot_test.dart
 //
-// Navigates to Feed, Messages, Profile, and Notifications screens.
+// Navigates to Feed, Messages, Profile, Notifications, and Comments screens.
 // Screenshot bytes are sent back to the driver via reportData.
 
 import 'dart:convert';
@@ -14,7 +14,7 @@ import 'package:pulse/main.dart' as app;
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('capture all 4 screenshots', (tester) async {
+  testWidgets('capture all 6 screenshots', (tester) async {
     app.main();
 
     // Pump real time to let Firebase auth + initial data load settle.
@@ -44,6 +44,9 @@ void main() {
     // ── Feed (default screen after login) ─────────────────────────────────
     await capture('feed');
 
+    // ── Comment Feed (feed showing comment count button inline with like) ──
+    await capture('comment_feed');
+
     // ── Messages ──────────────────────────────────────────────────────────
     await tapBottomNavTab('Messages');
     await capture('messages');
@@ -63,6 +66,27 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
     final notifBytes = await binding.takeScreenshot('notifications');
     screenshots['notifications'] = base64Encode(notifBytes);
+
+    // ── Back to Feed for comment screen capture ───────────────────────────
+    // Pop the notifications route to return to the shell
+    final NavigatorState navigator =
+        tester.state(find.byType(Navigator).last);
+    navigator.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // Navigate to Feed tab
+    await tapBottomNavTab('Feed');
+    await tester.pump(const Duration(seconds: 2));
+
+    // ── Comments Screen ───────────────────────────────────────────────────
+    // Tap the comment button (chat bubble) on the first visible post
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline).first);
+    await tester.pump(); // register tap
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 4));
+    final commentBytes = await binding.takeScreenshot('comment_screen');
+    screenshots['comment_screen'] = base64Encode(commentBytes);
 
     binding.reportData = screenshots;
   });
