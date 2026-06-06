@@ -150,6 +150,7 @@ class _PostCardBody extends StatelessWidget {
                 ),
               ),
             ],
+            const SizedBox(height: 12),
             // Like and comment buttons on the same row
             Row(
               children: [
