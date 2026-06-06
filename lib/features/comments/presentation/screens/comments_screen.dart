@@ -93,7 +93,15 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     controller: _controller,
                     decoration: const InputDecoration(
                       hintText: 'Add a comment…',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -103,7 +111,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
                   tooltip: 'Send',
                   onPressed: _submit,
                 ),
