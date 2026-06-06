@@ -225,26 +225,30 @@ class _LikeButton extends StatelessWidget {
         }
         final isLiked = state is LikeLoaded ? state.isLiked : false;
         final likeCount = state is LikeLoaded ? state.likeCount : 0;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(
-                isLiked ? Icons.favorite : Icons.favorite_border,
-                color: isLiked
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+        return GestureDetector(
+          onTap: () => context.read<LikeBloc>().add(
+                LikeToggleRequested(postId: postId, userId: userId),
               ),
-              tooltip: isLiked ? 'Unlike' : 'Like',
-              onPressed: () => context.read<LikeBloc>().add(
-                    LikeToggleRequested(postId: postId, userId: userId),
-                  ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isLiked ? Icons.favorite : Icons.favorite_border,
+                  color: isLiked
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$likeCount',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
-            Text(
-              '$likeCount',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+          ),
         );
       },
     );

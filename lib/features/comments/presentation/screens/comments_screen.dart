@@ -78,38 +78,39 @@ class _CommentsScreenState extends State<CommentsScreen> {
               },
             ),
           ),
-          const Divider(height: 1),
-          Padding(
-            padding: EdgeInsets.only(
-              left: 12,
-              right: 8,
-              top: 8,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 8,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Add a comment…',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(24)),
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 12,
+                right: 8,
+                top: 8,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Add a comment…',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(24)),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _submit(),
+                      maxLines: null,
                     ),
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _submit(),
-                    maxLines: null,
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
-                  tooltip: 'Send',
-                  onPressed: _submit,
-                ),
-              ],
+                  IconButton(
+                    icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
+                    tooltip: 'Send',
+                    onPressed: _submit,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
