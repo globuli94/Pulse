@@ -150,13 +150,16 @@ class _PostCardBody extends StatelessWidget {
                 ),
               ),
             ],
-            // Like button
-            _LikeButton(
-              postId: post.id,
-              userId: currentUid ?? '',
+            // Like and comment buttons on the same row
+            Row(
+              children: [
+                _LikeButton(
+                  postId: post.id,
+                  userId: currentUid ?? '',
+                ),
+                _CommentCountButton(postId: post.id),
+              ],
             ),
-            // Comment count button
-            _CommentCountButton(postId: post.id),
           ],
         ),
       ),

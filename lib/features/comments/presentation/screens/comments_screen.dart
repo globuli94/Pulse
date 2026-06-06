@@ -94,16 +94,10 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     decoration: const InputDecoration(
                       hintText: 'Add a comment…',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderRadius: BorderRadius.all(Radius.circular(24)),
                       ),
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _submit(),
